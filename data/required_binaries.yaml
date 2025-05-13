@@ -1,0 +1,12 @@
+control-plane:
+  - kubeadm
+  - kubelet
+  - kubectl
+  - etcd
+  - containerd
+
+node:
+  - kubeadm
+  - kubelet
+  - kubectl
+  - containerd
