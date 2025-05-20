@@ -10,3 +10,8 @@ node:
   - kubelet
   - kubectl
   - containerd
+
+
+kube-apiserver:
+  version: "v1.30.0"
+  path: "/usr/local/bin/kube-apiserver"

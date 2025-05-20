@@ -1,0 +1,37 @@
+--advertise-address={IP}
+--bind-address=0.0.0.0
+--secure-port=6443
+--service-cluster-ip-range=10.96.0.0/12
+
+# Сервис-аккаунты
+--service-account-key-file={CERT_DIR}/sa.pub
+--service-account-signing-key-file={CERT_DIR}/sa.key
+--service-account-issuer=https://kubernetes.default.svc
+
+# TLS и CA
+--client-ca-file={CERT_DIR}/ca.crt
+--tls-cert-file={CERT_DIR}/apiserver.crt
+--tls-private-key-file={CERT_DIR}/apiserver.key
+
+# kubelet auth
+--kubelet-client-certificate={CERT_DIR}/apiserver-kubelet-client.crt
+--kubelet-client-key={CERT_DIR}/apiserver-kubelet-client.key
+
+# etcd
+--etcd-servers=https://127.0.0.1:2379
+--etcd-cafile={CERT_DIR}/etcd/ca.crt
+--etcd-certfile={CERT_DIR}/etcd/server.crt
+--etcd-keyfile={CERT_DIR}/etcd/server.key
+
+# Авторизация и плагины
+--authorization-mode=Node,RBAC
+--enable-admission-plugins=NodeRestriction,NamespaceLifecycle,ServiceAccount
+
+# Прокси и фронт-прокси
+--requestheader-client-ca-file={CERT_DIR}/front-proxy-ca.crt
+--proxy-client-cert-file={CERT_DIR}/front-proxy-client.crt
+--proxy-client-key-file={CERT_DIR}/front-proxy-client.key
+--requestheader-allowed-names=front-proxy-client
+--requestheader-extra-headers-prefix=X-Remote-Extra-
+--requestheader-group-headers=X-Remote-Group
+--requestheader-username-headers=X-Remote-User
