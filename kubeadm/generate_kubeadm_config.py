@@ -1,14 +1,16 @@
 # kubeadm/generate_kubeadm_config.py
 
-import sys
 import os
+import sys
 import shutil
+from pathlib import Path
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import log
 from data import collected_info
 
-OUTPUT_FILE = "data/kubeadm-config.yaml"
+OUTPUT_PATH = Path("data/kubeadm-config.yaml")
 
 def is_kubeadm_available():
     return shutil.which("kubeadm") is not None
@@ -45,10 +47,11 @@ etcd:
     keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
 """
 
-    with open(OUTPUT_FILE, "w") as f:
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_PATH, "w") as f:
         f.write(content)
 
-    log(f"Файл создан: {OUTPUT_FILE}", "ok")
+    log(f"Файл создан: {OUTPUT_PATH}", "ok")
 
 if __name__ == "__main__":
     generate_config()

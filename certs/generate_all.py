@@ -25,7 +25,6 @@ os.makedirs(ETCD_DIR, exist_ok=True)
 cert_info = {}
 now = datetime.utcnow()
 
-
 def run(cmd, msg=None):
     try:
         subprocess.run(cmd, check=True)
@@ -36,8 +35,7 @@ def run(cmd, msg=None):
         log(f"Ошибка: {e}", "error")
         return False
 
-
-def write_openssl_cnf(cn):
+def write_openssl_cnf(cn, client_cert=False):
     path = f"/tmp/openssl_{cn}.cnf"
     dns_names = [cn, HOSTNAME]
     ip_addresses = [IP]
@@ -66,21 +64,23 @@ x509_extensions = v3_req
 
 [ dn ]
 CN = {cn}
-
+""")
+        if cn == "kubernetes-admin":
+            f.write("O = system:masters\n")
+        f.write("""
 [ v3_req ]
-subjectAltName = @alt_names
 basicConstraints = CA:FALSE
 keyUsage = digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth, clientAuth
-
-[ alt_names ]
-""" + "\n".join(
-        [f"DNS.{i+1} = {name}" for i, name in enumerate(dns_names)] +
-        [f"IP.{i+1} = {addr}" for i, addr in enumerate(ip_addresses)]
-    ))
+extendedKeyUsage = clientAuth, serverAuth
+""")
+        if dns_names or ip_addresses:
+            f.write("subjectAltName = @alt_names\n\n[ alt_names ]\n")
+            for i, name in enumerate(dns_names):
+                f.write(f"DNS.{i+1} = {name}\n")
+            for i, addr in enumerate(ip_addresses):
+                f.write(f"IP.{i+1} = {addr}\n")
 
     return path
-
 
 def get_cert_dates(path):
     try:
@@ -93,7 +93,6 @@ def get_cert_dates(path):
         log(f"Не удалось прочитать даты из {path}: {e}", "error")
         return None, None
 
-
 def validate_key_pair(cert_path, key_path):
     try:
         cert_mod = subprocess.check_output(["openssl", "x509", "-in", cert_path, "-noout", "-modulus"]).strip()
@@ -102,7 +101,6 @@ def validate_key_pair(cert_path, key_path):
     except Exception as e:
         log(f"⚠️ Проверка пары ключ+сертификат не удалась: {e}", "warn")
         return False
-
 
 def generate_ca():
     if os.path.exists(CA_CERT):
@@ -124,8 +122,7 @@ def generate_ca():
         "expires_at": (now + timedelta(days=CA_DURATION_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
-
-def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False):
+def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False, client_cert=False):
     if os.path.exists(path):
         not_before, not_after = get_cert_dates(path)
         if not_before and not_after:
@@ -141,7 +138,7 @@ def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False):
 
     log(f"Генерация сертификата: {name}", "warn")
     csr_path = f"/tmp/{name}.csr"
-    cnf_path = write_openssl_cnf(cn)
+    cnf_path = write_openssl_cnf(cn, client_cert=client_cert)
 
     run(["openssl", "genrsa", "-out", key_path, "2048"])
     run(["openssl", "req", "-new", "-key", key_path, "-out", csr_path, "-config", cnf_path])
@@ -167,7 +164,6 @@ def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False):
     os.remove(csr_path)
     os.remove(cnf_path)
 
-
 def generate_sa_keys(force=False):
     sa_key = f"{PKI_DIR}/sa.key"
     sa_pub = f"{PKI_DIR}/sa.pub"
@@ -190,7 +186,6 @@ def generate_sa_keys(force=False):
         "expires_at": "n/a"
     }
 
-
 def create_service_file():
     service_file = f"{SYSTEMD_DIR}/{SERVICE_NAME}.service"
     content = f"""[Unit]
@@ -203,7 +198,6 @@ ExecStart=/usr/bin/python3 {RENEW_SCRIPT}
     with open(service_file, "w") as f:
         f.write(content)
     log(f"Создан systemd unit: {service_file}", "ok")
-
 
 def create_timer_file():
     timer_file = f"{SYSTEMD_DIR}/{SERVICE_NAME}.timer"
@@ -221,13 +215,11 @@ WantedBy=timers.target
         f.write(content)
     log(f"Создан systemd таймер: {timer_file}", "ok")
 
-
 def enable_timer():
     os.system("systemctl daemon-reexec")
     os.system("systemctl daemon-reload")
     os.system(f"systemctl enable --now {SERVICE_NAME}.timer")
     log(f"Таймер активирован: {SERVICE_NAME}", "ok")
-
 
 def restart_tls_services():
     services = ["kube-apiserver", "etcd"]
@@ -239,7 +231,6 @@ def restart_tls_services():
             subprocess.run(["systemctl", "restart", service])
         else:
             log(f"Сервис {service} не запущен — пропускаем", "warn")
-
 
 def main():
     rotate_sa = "--rotate-sa" in sys.argv
@@ -255,17 +246,19 @@ def main():
         "etcd-peer": f"{ETCD_DIR}/peer",
         "etcd-healthcheck": f"{ETCD_DIR}/healthcheck-client",
         "front-proxy-client": f"{PKI_DIR}/front-proxy-client",
-        "front-proxy-ca": f"{PKI_DIR}/front-proxy-ca"
+        "front-proxy-ca": f"{PKI_DIR}/front-proxy-ca",
+        "admin": f"{PKI_DIR}/admin"
     }
 
     for name, base in certs.items():
         generate_cert(
             name=name,
-            cn=name,
+            cn="kubernetes-admin" if name == "admin" else name,
             path=f"{base}.crt",
             key_path=f"{base}.key",
             etcd="etcd" in name,
-            dry_run=dry_run
+            dry_run=dry_run,
+            client_cert=(name == "admin")
         )
 
     generate_sa_keys(force=rotate_sa)
@@ -283,8 +276,7 @@ def main():
         enable_timer()
         restart_tls_services()
     else:
-        log("🚫 dry-run: cert_info.json и systemd не затронуты", "warn")
-
+        log("dry-run: cert_info.json и systemd не затронуты", "warn")
 
 if __name__ == "__main__":
     main()
