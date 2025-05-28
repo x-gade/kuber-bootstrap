@@ -4,10 +4,11 @@ data/collected_info.json
 data/collected_info.py
 data/missing_binaries.json
 data/kubeadm-config.yaml
-*.bak  # systemd unit backups
+*.bak
 
 # Конфиги runtime'а, которые не коммитим
-*.swp  # временные файлы редакторов (например, nano/vim)
+*.swp
+# временные файлы редакторов (например, nano/vim)
 
 # Кеши Python
 __pycache__/

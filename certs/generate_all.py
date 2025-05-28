@@ -4,7 +4,6 @@ import json
 import subprocess
 from datetime import datetime, timedelta
 
-# Добавляем корень проекта, если скрипт запущен напрямую
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import log
@@ -40,26 +39,46 @@ def run(cmd, msg=None):
 
 def write_openssl_cnf(cn):
     path = f"/tmp/openssl_{cn}.cnf"
+    dns_names = [cn, HOSTNAME]
+    ip_addresses = [IP]
+
+    if "apiserver" in cn:
+        dns_names += [
+            "kubernetes", "kubernetes.default", "kubernetes.default.svc",
+            "kubernetes.default.svc.cluster.local"
+        ]
+        ip_addresses += ["127.0.0.1", "10.96.0.1"]
+
+    if "etcd" in cn:
+        dns_names.append("localhost")
+        ip_addresses.append("127.0.0.1")
+
+    dns_names = list(dict.fromkeys(dns_names))
+    ip_addresses = list(dict.fromkeys(ip_addresses))
+
     with open(path, "w") as f:
         f.write(f"""
 [ req ]
 prompt = no
 distinguished_name = dn
-x509_extensions = v3_req
 req_extensions = v3_req
+x509_extensions = v3_req
 
 [ dn ]
 CN = {cn}
 
 [ v3_req ]
 subjectAltName = @alt_names
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
 
 [ alt_names ]
-DNS.1 = {cn}
-DNS.2 = {HOSTNAME}
-IP.1 = 127.0.0.1
-IP.2 = {IP}
-""")
+""" + "\n".join(
+        [f"DNS.{i+1} = {name}" for i, name in enumerate(dns_names)] +
+        [f"IP.{i+1} = {addr}" for i, addr in enumerate(ip_addresses)]
+    ))
+
     return path
 
 
@@ -210,6 +229,18 @@ def enable_timer():
     log(f"Таймер активирован: {SERVICE_NAME}", "ok")
 
 
+def restart_tls_services():
+    services = ["kube-apiserver", "etcd"]
+    for service in services:
+        result = subprocess.run(["systemctl", "is-active", service], stdout=subprocess.DEVNULL)
+        if result.returncode == 0:
+            log(f"Перезапуск TLS-сервиса: {service}", "info")
+            subprocess.run(["sleep", "2"])
+            subprocess.run(["systemctl", "restart", service])
+        else:
+            log(f"Сервис {service} не запущен — пропускаем", "warn")
+
+
 def main():
     rotate_sa = "--rotate-sa" in sys.argv
     dry_run = "--dry-run" in sys.argv
@@ -250,6 +281,7 @@ def main():
         create_service_file()
         create_timer_file()
         enable_timer()
+        restart_tls_services()
     else:
         log("🚫 dry-run: cert_info.json и systemd не затронуты", "warn")
 
