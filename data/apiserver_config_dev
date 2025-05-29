@@ -1,0 +1,28 @@
+--advertise-address={IP}
+--bind-address=0.0.0.0
+--secure-port=6443
+--service-cluster-ip-range=10.96.0.0/12
+--service-account-signing-key-file=/etc/kubernetes/pki/sa.key
+--service-account-issuer=https://kubernetes.default.svc
+--service-account-key-file=/etc/kubernetes/pki/sa.pub
+
+# TLS и CA
+--client-ca-file={CERT_DIR}/ca.crt
+--tls-cert-file={CERT_DIR}/apiserver.crt
+--tls-private-key-file={CERT_DIR}/apiserver.key
+
+# kubelet auth
+--kubelet-client-certificate={CERT_DIR}/apiserver-kubelet-client.crt
+--kubelet-client-key={CERT_DIR}/apiserver-kubelet-client.key
+
+# etcd
+--etcd-servers=https://127.0.0.1:2379
+--etcd-cafile={CERT_DIR}/etcd/ca.crt
+--etcd-certfile={CERT_DIR}/etcd/server.crt
+--etcd-keyfile={CERT_DIR}/etcd/server.key
+
+# Авторизация упрощена
+--authorization-mode=RBAC
+--enable-admission-plugins=NamespaceLifecycle
+--allow-privileged=true
+--disable-admission-plugins=PodSecurity

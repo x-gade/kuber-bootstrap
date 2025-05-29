@@ -17,7 +17,16 @@ REQUIRED_BINARIES_PATH = Path("data/required_binaries.yaml")
 SERVICE_PATH = "/etc/systemd/system/kube-apiserver.service"
 MANIFESTS_DIR = "/etc/kubernetes/manifests"
 CERT_DIR = "/etc/kubernetes/pki"
-CONFIG_PATH = Path("data/apiserver_config")
+
+
+def get_config_path(mode: str) -> Path:
+    if mode == "dev":
+        return Path("data/apiserver_config_dev")
+    elif mode == "prod":
+        return Path("data/apiserver_config_prod")
+    else:
+        log(f"Неизвестный режим: {mode}", "error")
+        sys.exit(1)
 
 
 def remove_pod_manifest():
@@ -54,12 +63,12 @@ def download_binary(version, path):
         sys.exit(1)
 
 
-def load_flag_lines():
-    if not CONFIG_PATH.exists():
-        log(f"Файл конфигурации параметров не найден: {CONFIG_PATH}", "error")
+def load_flag_lines(config_path: Path):
+    if not config_path.exists():
+        log(f"Файл конфигурации параметров не найден: {config_path}", "error")
         sys.exit(1)
 
-    with open(CONFIG_PATH, "r") as f:
+    with open(config_path, "r") as f:
         lines = f.readlines()
 
     flags = []
@@ -73,8 +82,8 @@ def load_flag_lines():
     return " \\\n  ".join(flags)
 
 
-def generate_unit_file(path):
-    flags = load_flag_lines()
+def generate_unit_file(path, config_path):
+    flags = load_flag_lines(config_path)
 
     unit_content = f"""[Unit]
 Description=Kubernetes API Server
@@ -92,34 +101,43 @@ RestartSec=5
 WantedBy=multi-user.target
 """
 
+    changed = True
     if os.path.exists(SERVICE_PATH):
         with open(SERVICE_PATH, "r") as f:
             current_content = f.read()
         if current_content == unit_content:
-            log("Unit-файл уже актуален, изменений не требуется", "ok")
-            return
-        backup_path = SERVICE_PATH + ".bak"
-        shutil.copy(SERVICE_PATH, backup_path)
-        log(f"Unit-файл отличается. Создана резервная копия: {backup_path}", "warn")
+            log("Unit-файл уже актуален, но будет выполнен принудительный перезапуск", "warn")
+            changed = False
+        else:
+            backup_path = SERVICE_PATH + ".bak"
+            shutil.copy(SERVICE_PATH, backup_path)
+            log(f"Unit-файл отличается. Создана резервная копия: {backup_path}", "warn")
 
     with open(SERVICE_PATH, "w") as f:
         f.write(unit_content)
-    log(f"Unit-файл обновлён: {SERVICE_PATH}", "ok")
+    if changed:
+        log(f"Unit-файл обновлён: {SERVICE_PATH}", "ok")
 
 
 def reload_and_start():
     subprocess.run(["systemctl", "daemon-reexec"], check=True)
     subprocess.run(["systemctl", "daemon-reload"], check=True)
-    subprocess.run(["systemctl", "enable", "--now", "kube-apiserver"], check=True)
-    log("kube-apiserver запущен и добавлен в автозагрузку", "ok")
+    subprocess.run(["systemctl", "restart", "kube-apiserver"], check=True)
+    subprocess.run(["systemctl", "enable", "kube-apiserver"], check=True)
+    log("kube-apiserver перезапущен и добавлен в автозагрузку", "ok")
 
 
 def main():
-    log("=== Настройка systemd-сервиса kube-apiserver ===", "info")
+    mode = "prod"
+    if len(sys.argv) > 1 and sys.argv[1] == "--mode=dev":
+        mode = "dev"
+    log(f"=== Настройка kube-apiserver в режиме {mode.upper()} ===", "info")
+
+    config_path = get_config_path(mode)
     remove_pod_manifest()
     version, path = load_required_version()
     download_binary(version, path)
-    generate_unit_file(path)
+    generate_unit_file(path, config_path)
     reload_and_start()
 
 
