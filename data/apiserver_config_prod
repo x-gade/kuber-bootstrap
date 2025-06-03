@@ -19,7 +19,7 @@
 
 # etcd
 --etcd-servers=https://127.0.0.1:2379
---etcd-cafile={CERT_DIR}/etcd/ca.crt
+--etcd-cafile={CERT_DIR}/ca.crt
 --etcd-certfile={CERT_DIR}/etcd/server.crt
 --etcd-keyfile={CERT_DIR}/etcd/server.key
 

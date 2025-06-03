@@ -5,6 +5,7 @@ data/collected_info.py
 data/missing_binaries.json
 data/kubeadm-config.yaml
 *.bak
+*.gz
 
 # Конфиги runtime'а, которые не коммитим
 *.swp

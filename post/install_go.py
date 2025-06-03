@@ -35,6 +35,13 @@ def main():
     print("[INFO] Проверяем установленную версию Go:")
     run(["go", "version"])
 
+    print("[INFO] Удаляем загруженный архив...")
+    if os.path.exists(GO_TARBALL):
+        os.remove(GO_TARBALL)
+        print(f"[OK] Архив {GO_TARBALL} удалён.")
+    else:
+        print(f"[WARN] Архив {GO_TARBALL} не найден для удаления.")
+
     print("[OK] Установка Go завершена.")
 
 

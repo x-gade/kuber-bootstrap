@@ -22,6 +22,7 @@ SYSTEMD_DIR = "/etc/systemd/system"
 RENEW_SCRIPT = "/opt/kuber-bootstrap/certs/renew_certs.py"
 
 os.makedirs(ETCD_DIR, exist_ok=True)
+os.makedirs("/var/lib/kubelet/pki", exist_ok=True)
 cert_info = {}
 now = datetime.utcnow()
 
@@ -36,7 +37,7 @@ def run(cmd, msg=None):
         return False
 
 def write_openssl_cnf(cn, client_cert=False):
-    path = f"/tmp/openssl_{cn}.cnf"
+    path = f"/tmp/openssl_{cn.replace(':', '_')}.cnf"
     dns_names = [cn, HOSTNAME]
     ip_addresses = [IP]
 
@@ -65,7 +66,9 @@ x509_extensions = v3_req
 [ dn ]
 CN = {cn}
 """)
-        if cn == "kubernetes-admin":
+        if cn.startswith("system:node:"):
+            f.write("O = system:nodes\n")
+        elif cn == "kubernetes-admin":
             f.write("O = system:masters\n")
         f.write("""
 [ v3_req ]
@@ -137,7 +140,7 @@ def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False, client_ce
         return
 
     log(f"Генерация сертификата: {name}", "warn")
-    csr_path = f"/tmp/{name}.csr"
+    csr_path = f"/tmp/{name.replace(':', '_')}.csr"
     cnf_path = write_openssl_cnf(cn, client_cert=client_cert)
 
     run(["openssl", "genrsa", "-out", key_path, "2048"])
@@ -260,6 +263,15 @@ def main():
             dry_run=dry_run,
             client_cert=(name == "admin")
         )
+
+    generate_cert(
+        name="kubelet-client",
+        cn=f"system:node:{HOSTNAME}",
+        path=f"{PKI_DIR}/kubelet-client.crt",
+        key_path=f"{PKI_DIR}/kubelet-client.key",
+        dry_run=dry_run,
+        client_cert=True
+    )
 
     generate_sa_keys(force=rotate_sa)
 

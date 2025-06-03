@@ -1,29 +1,31 @@
 # kubeadm/generate_admin_kubeconfig.py
 
-import os
-import sys
 import yaml
+from pathlib import Path
 
-# путь к корню проекта
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+KUBECONFIG_PATH = Path("/etc/kubernetes/admin.conf")
+PROFILE_EXPORT_PATH = Path("/etc/profile.d/set-kubeconfig.sh")
 
-from utils.logger import log
-from data import collected_info
+def log(msg, level="info"):
+    levels = {
+        "info": "[INFO]",
+        "ok": "[OK]",
+        "warn": "[WARN]",
+        "error": "[ERROR]"
+    }
+    print(f"{levels.get(level, '[INFO]')} {msg}")
 
-KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
-EXPORT_SCRIPT_PATH = "/etc/profile.d/set-kubeconfig.sh"
+def generate_admin_kubeconfig():
+    log("Генерация admin.kubeconfig...")
 
-def generate_kubeconfig():
-    os.makedirs(os.path.dirname(KUBECONFIG_PATH), exist_ok=True)
-
-    config = {
+    kubeconfig = {
         "apiVersion": "v1",
         "kind": "Config",
         "clusters": [{
             "name": "kubernetes",
             "cluster": {
                 "certificate-authority": "/etc/kubernetes/pki/ca.crt",
-                "server": f"https://{collected_info.IP}:6443"
+                "server": "https://127.0.0.1:6443"
             }
         }],
         "users": [{
@@ -43,15 +45,18 @@ def generate_kubeconfig():
         "current-context": "kubernetes-admin@kubernetes"
     }
 
-    with open(KUBECONFIG_PATH, "w") as f:
-        yaml.dump(config, f, sort_keys=False, default_flow_style=False)
+    KUBECONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+    with open(KUBECONFIG_PATH, "w") as f:
+        yaml.safe_dump(kubeconfig, f, sort_keys=False)
     log(f"Kubeconfig сгенерирован: {KUBECONFIG_PATH}", "ok")
 
-    with open(EXPORT_SCRIPT_PATH, "w") as f:
-        f.write(f'export KUBECONFIG="{KUBECONFIG_PATH}"\n')
+    # Автоэкспорт переменной
+    export_line = f'export KUBECONFIG={KUBECONFIG_PATH}\n'
+    with open(PROFILE_EXPORT_PATH, "w") as f:
+        f.write(export_line)
+    log(f"Экспорт KUBECONFIG добавлен в: {PROFILE_EXPORT_PATH}", "ok")
 
-    log(f"Экспорт KUBECONFIG добавлен в: {EXPORT_SCRIPT_PATH}", "ok")
 
 if __name__ == "__main__":
-    generate_kubeconfig()
+    generate_admin_kubeconfig()

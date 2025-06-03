@@ -82,24 +82,12 @@ def load_flag_lines(config_path: Path):
     return " \\\n  ".join(flags)
 
 
-def generate_unit_file(path, config_path):
+def generate_unit_file(binary_path, config_path):
     flags = load_flag_lines(config_path)
+    with open("data/kube-apiserver.service.template", "r") as f:
+        template = f.read()
 
-    unit_content = f"""[Unit]
-Description=Kubernetes API Server
-Documentation=https://kubernetes.io/docs/
-After=network.target
-
-[Service]
-ExecStart={path} \\
-  {flags}
-
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-"""
+    unit_content = template.replace("{BINARY_PATH}", binary_path).replace("{FLAGS}", flags)
 
     changed = True
     if os.path.exists(SERVICE_PATH):

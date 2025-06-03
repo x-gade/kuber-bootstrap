@@ -1,0 +1,48 @@
+kubeProxyReplacement: "strict"
+k8sServiceHost: 193.162.47.48
+k8sServicePort: 6443
+
+ipam:
+  mode: "kubernetes"
+
+# Временно отключим hostPort, если конфликтует с dev-сеткой
+hostServices:
+  enabled: false
+
+externalIPs:
+  enabled: true
+
+nodePort:
+  enabled: true
+
+# Включим CiliumEndpointSlice для корректной адресации
+endpointSlices:
+  enabled: true
+
+routingMode: "native"
+
+tunnel: "disabled"  # если вы НЕ планируете использовать overlay (vxlan/geneve)
+
+bpf:
+  masquerade: true
+
+agent:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: "true"
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+operator:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: "true"
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+hubble:
+  enabled: false
