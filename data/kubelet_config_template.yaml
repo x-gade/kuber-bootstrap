@@ -28,7 +28,7 @@ kubeReserved:
   cpu: "400m"
   memory: "2Gi"
   ephemeral-storage: "2Gi"
-kubeReservedCgroup: "/system.slice/kubelet.service"
+kubeReservedCgroup: "/kubelet.slice"
 systemReserved:
   cpu: "400m"
   memory: "2Gi"

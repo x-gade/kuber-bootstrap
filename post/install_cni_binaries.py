@@ -84,8 +84,22 @@ def generate_cni_config():
 
 def restart_kubelet():
     log("Перезапуск kubelet для применения CNI...")
-    run("systemctl restart kubelet")
-    success("kubelet перезапущен.")
+    result = subprocess.run(["systemctl", "restart", "kubelet"], capture_output=True, text=True)
+    if result.returncode == 0:
+        success("kubelet перезапущен.")
+    else:
+        error(f"Не удалось перезапустить kubelet:\n{result.stderr}")
+
+    # Проверка состояния
+    log("Проверка состояния kubelet...")
+    status = subprocess.run(["systemctl", "is-active", "kubelet"], capture_output=True, text=True)
+    if status.returncode == 0 and status.stdout.strip() == "active":
+        success("kubelet работает нормально.")
+    else:
+        warn("⚠️ kubelet НЕ в активном состоянии!")
+        print(f"[DEBUG] systemctl is-active: {status.stdout.strip()}")
+        print("[DEBUG] Последние логи kubelet (journalctl):")
+        subprocess.run("journalctl -u kubelet --no-pager -n 20", shell=True)
 
 def main():
     print("[START] Установка бинарников Cilium CNI вручную...")

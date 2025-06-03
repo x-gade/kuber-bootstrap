@@ -28,8 +28,8 @@ CONTROL_PLANE_STEPS = [
     ("Применение CNI манифеста", "post/apply_cni.py"),
     ("Инициализация controller-manager и scheduler", "post/initialize_control_plane_components.py"),
     ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
-    ("Патч controller-менеджера и kube-proxy", "post/patch_controller_flags.py"),
-    ("Генерация команды подключения нод", "post/join_nodes.py"),
+#    ("Патч controller-менеджера и kube-proxy", "post/patch_controller_flags.py"),
+#    ("Генерация команды подключения нод", "post/join_nodes.py"),
 ]
 
 # Очерёдность шагов установки для worker-ноды

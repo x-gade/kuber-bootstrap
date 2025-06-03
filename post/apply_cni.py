@@ -21,16 +21,18 @@ CILIUM_YAML_PATH = os.path.join(CILIUM_DIR, "install/kubernetes/cilium.yaml")
 CNI_CONFIG_DIR = "/etc/cni/net.d"
 TEMP_CNI_FILE = os.path.join(CNI_CONFIG_DIR, "10-bridge-temporary.conf")
 
-
 def run_shell_cmd(cmd: list, cwd=None, capture=False):
     try:
-        result = subprocess.run(cmd, check=True, cwd=cwd, stdout=subprocess.PIPE if capture else None, stderr=subprocess.PIPE if capture else None)
+        result = subprocess.run(
+            cmd, check=True, cwd=cwd,
+            stdout=subprocess.PIPE if capture else None,
+            stderr=subprocess.PIPE if capture else None
+        )
         return result.stdout.decode().strip() if capture else 0
     except subprocess.CalledProcessError as e:
         if capture:
             return e.stderr.decode().strip()
         return 1
-
 
 def ensure_cilium_repo():
     if os.path.exists(CILIUM_DIR):
@@ -46,11 +48,9 @@ def ensure_cilium_repo():
         log(f"Ошибка при переключении на ветку {CILIUM_BRANCH}", "error")
         sys.exit(1)
 
-
 def generate_cilium_manifest():
     values_template = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml.j2")
     values_rendered = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml")
-
     port = "6443"
 
     with open(values_template) as f:
@@ -73,6 +73,18 @@ def generate_cilium_manifest():
         log("Ошибка при генерации Helm-манифеста.", "error")
         sys.exit(1)
 
+def check_kubelet_status():
+    log("Проверка статуса kubelet после перезапуска...", "info")
+    try:
+        result = subprocess.run(["systemctl", "is-active", "kubelet"], check=True, stdout=subprocess.PIPE)
+        status = result.stdout.decode().strip()
+        if status == "active":
+            log("kubelet работает нормально.", "ok")
+        else:
+            log(f"kubelet не в активном состоянии: {status}", "warn")
+    except subprocess.CalledProcessError as e:
+        log(f"kubelet не запущен! Ошибка: {e}", "error")
+        sys.exit(1)
 
 def cleanup_temporary_bridge():
     if os.path.exists(TEMP_CNI_FILE):
@@ -83,7 +95,7 @@ def cleanup_temporary_bridge():
 
     log("Перезапуск kubelet после удаления bridge...", "info")
     subprocess.run(["systemctl", "restart", "kubelet"])
-
+    check_kubelet_status()
 
 def apply_cilium_manifest():
     if not os.path.exists(CILIUM_YAML_PATH):
@@ -97,14 +109,12 @@ def apply_cilium_manifest():
         log("Не удалось применить манифест Cilium", "error")
         sys.exit(1)
 
-
 def main():
     log("== Установка Cilium из исходников с удалением временной bridge-сети ==", "start")
     ensure_cilium_repo()
     apply_cilium_manifest()
     cleanup_temporary_bridge()
     log("Cilium установлен, bridge удалён. Можно продолжать установку.", "ok")
-
 
 if __name__ == "__main__":
     main()

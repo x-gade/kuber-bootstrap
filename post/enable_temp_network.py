@@ -35,10 +35,8 @@ def write_cni_config():
 def restore_dns():
     print("[INFO] Проверка и восстановление /etc/resolv.conf...")
 
-    # Если systemd-resolved активен — перезапускаем
     subprocess.run(["systemctl", "restart", "systemd-resolved"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # Явно записываем fallback DNS, если systemd-resolved не работает
     try:
         with open("/etc/resolv.conf", "w") as f:
             f.write("nameserver 8.8.8.8\n")
@@ -54,6 +52,16 @@ def restart_kubelet():
     else:
         print("[ERROR] Не удалось перезапустить kubelet:")
         print(result.stderr)
+
+    # Проверка состояния после перезапуска
+    print("[INFO] Проверка статуса kubelet после перезапуска...")
+    status = subprocess.run(["systemctl", "is-active", "kubelet"], capture_output=True, text=True)
+    if status.returncode == 0 and status.stdout.strip() == "active":
+        print("[OK] kubelet работает нормально.")
+    else:
+        print("[ERROR] kubelet НЕ запущен после перезапуска!")
+        print(f"[DEBUG] stdout: {status.stdout.strip()}")
+        print(f"[DEBUG] stderr: {status.stderr.strip()}")
 
 def main():
     write_cni_config()
