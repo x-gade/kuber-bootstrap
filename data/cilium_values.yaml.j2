@@ -5,7 +5,6 @@ k8sServicePort: {{ PORT }}
 ipam:
   mode: "kubernetes"
 
-# Временно отключим hostPort, если конфликтует с dev-сеткой
 hostServices:
   enabled: false
 
@@ -15,13 +14,11 @@ externalIPs:
 nodePort:
   enabled: true
 
-# Включим CiliumEndpointSlice для корректной адресации
 endpointSlices:
   enabled: true
 
 routingMode: "native"
-
-tunnel: "disabled"  # если вы НЕ планируете использовать overlay (vxlan/geneve)
+tunnel: "disabled"
 
 bpf:
   masquerade: true
@@ -30,19 +27,39 @@ agent:
   enabled: true
   nodeSelector:
     node-role.kubernetes.io/control-plane: "true"
+  {% if ENABLE_TOLERATIONS %}
   tolerations:
     - key: "node-role.kubernetes.io/control-plane"
       operator: "Exists"
       effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoSchedule"
+  {% endif %}
 
 operator:
   enabled: true
+  replicas: {{ REPLICAS }}
   nodeSelector:
     node-role.kubernetes.io/control-plane: "true"
+  {% if ENABLE_TOLERATIONS %}
   tolerations:
     - key: "node-role.kubernetes.io/control-plane"
       operator: "Exists"
       effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoSchedule"
+  {% endif %}
+  {% if not DISABLE_AFFINITY %}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            io.cilium/app: operator
+        topologyKey: kubernetes.io/hostname
+  {% endif %}
 
 hubble:
   enabled: false

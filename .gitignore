@@ -22,3 +22,4 @@ logs/
 # Локальные настройки IDE (если используешь)
 .vscode/
 .idea/
+data/cilium_values.yaml

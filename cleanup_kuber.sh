@@ -22,12 +22,19 @@ rm -f /etc/systemd/system/etcd.service
 rm -f /etc/systemd/system/kube-apiserver.service
 rm -f /etc/systemd/system/kube-cert-renew.service
 rm -f /etc/systemd/system/kube-cert-renew.timer
+rm -rf /etc/systemd/system/kubelet.service.d
+systemctl daemon-reexec
 systemctl daemon-reload
 
 echo "[CLEANUP] Удаление бинарников Kubernetes..."
 rm -f /usr/local/bin/kubeadm
 rm -f /usr/local/bin/kubectl
 rm -f /usr/local/bin/kubelet
+rm -f /usr/local/bin/kube-apiserver
+rm -f /usr/local/bin/etcd
+
+echo "[CLEANUP] Принудительное размонтирование всех залипших kubelet-монтов..."
+mount | grep '/var/lib/kubelet' | awk '{print $3}' | xargs -r -n1 umount -l
 
 echo "[CLEANUP] Удаление CNI и runtime конфигураций..."
 rm -rf /etc/cni
@@ -36,7 +43,6 @@ rm -rf /var/lib/cni
 rm -rf /var/lib/kubelet
 rm -rf /etc/kubernetes
 rm -rf /var/lib/etcd
-rm -rf /etc/systemd/system/kubelet.service.d
 
 echo "[CLEANUP] Удаление конфигов и логов..."
 rm -rf ~/.kube
@@ -45,10 +51,9 @@ rm -f /opt/kuber-bootstrap/collected_info.json
 rm -f /opt/kuber-bootstrap/certs/cert_info.json
 
 echo "[CLEANUP] Очистка iptables (можно закомментировать при необходимости)..."
-iptables -F
-iptables -t nat -F
-iptables -t mangle -F
-iptables -X
+iptables -F || true
+iptables -t nat -F || true
+iptables -t mangle -F || true
+iptables -X || true
 
-echo "[CLEANUP] Kubernetes удалён с машины."
-
+echo "[CLEANUP] Kubernetes полностью удалён с машины."

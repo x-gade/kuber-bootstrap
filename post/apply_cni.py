@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import shutil
+import json
 from jinja2 import Template
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,16 +49,45 @@ def ensure_cilium_repo():
         log(f"Ошибка при переключении на ветку {CILIUM_BRANCH}", "error")
         sys.exit(1)
 
+def detect_cluster_conditions():
+    log("Определение условий кластера...", "info")
+    try:
+        result = subprocess.run(
+            ["kubectl", "get", "nodes", "-o", "json"],
+            check=True, capture_output=True, text=True
+        )
+        data = json.loads(result.stdout)
+        nodes = data.get("items", [])
+        if len(nodes) == 1:
+            log("Обнаружена единственная нода. Включён режим совместимости single-node.", "warn")
+            return {
+                "REPLICAS": 1,
+                "DISABLE_AFFINITY": True,
+                "ENABLE_TOLERATIONS": True
+            }
+        else:
+            log(f"Обнаружено {len(nodes)} нод(ы). Используются стандартные параметры.", "ok")
+            return {
+                "REPLICAS": 2,
+                "DISABLE_AFFINITY": False,
+                "ENABLE_TOLERATIONS": False
+            }
+    except Exception as e:
+        log(f"Ошибка при анализе нод: {e}", "error")
+        sys.exit(1)
+
 def generate_cilium_manifest():
     values_template = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml.j2")
     values_rendered = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml")
     port = "6443"
 
+    overrides = detect_cluster_conditions()
+
     with open(values_template) as f:
         tmpl = Template(f.read())
 
     with open(values_rendered, "w") as f:
-        f.write(tmpl.render(IP=IP, PORT=port))
+        f.write(tmpl.render(IP=IP, PORT=port, **overrides))
 
     cmd = [
         "helm", "template", "cilium", CILIUM_HELM_DIR,
