@@ -1,54 +1,63 @@
 #!/usr/bin/env python3
-import os
+
 import subprocess
-import time
 import sys
+import os
+import json
 
+# Добавляем путь к модулям
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from data import collected_info
 from utils.logger import log
-from data.collected_info import HOSTNAME, ROLE
 
-# Путь до kubeconfig по умолчанию
-KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
-LABEL = f"node-role.kubernetes.io/{ROLE}"
 
-def wait_for_node(timeout=90, interval=3):
-    for _ in range(int(timeout/interval)):
-        result = subprocess.run([
-            "kubectl", "get", "node", HOSTNAME
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            return True
-        time.sleep(interval)
-    return False
+def get_current_labels(node_name: str) -> dict:
+    result = subprocess.run(
+        ["kubectl", "get", "node", node_name, "-o", "json"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        log(f"Ошибка при получении меток для {node_name}: {result.stderr}", "error")
+        sys.exit(1)
 
-def label_node():
-    cmd_label = [
-        "kubectl", "label", "node", HOSTNAME,
-        f"{LABEL}=" , "--overwrite"
-    ]
-    cmd_taint = [
-        "kubectl", "taint", "nodes", HOSTNAME,
-        f"{LABEL}=:NoSchedule", "--overwrite"
-    ]
-    subprocess.run(cmd_label, check=True)
-    subprocess.run(cmd_taint, check=True)
+    try:
+        data = json.loads(result.stdout)
+        return data.get("metadata", {}).get("labels", {})
+    except Exception as e:
+        log(f"Ошибка при разборе JSON: {e}", "error")
+        sys.exit(1)
+
+
+def label_node(node_name: str, role: str):
+    label_key = f"node-role.kubernetes.io/{role}"
+    label_full = f"{label_key}=true"
+
+    labels = get_current_labels(node_name)
+    current_value = labels.get(label_key)
+
+    if current_value == "true":
+        log(f"Метка уже установлена: {label_full}", "ok")
+        return
+
+    result = subprocess.run(
+        ["kubectl", "label", "node", node_name, label_full, "--overwrite"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode == 0:
+        log(f"Метка добавлена или обновлена: {label_full}", "ok")
+    else:
+        log(f"Не удалось добавить метку: {result.stderr}", "error")
+        sys.exit(1)
+
 
 def main():
-    # Гарантируем использование корректного kubeconfig при вызове kubectl
-    os.environ.setdefault("KUBECONFIG", KUBECONFIG_PATH)
+    node_name = collected_info.HOSTNAME
+    role = collected_info.ROLE
 
-    log("Ожидание регистрации ноды в кластере...", "info")
-    if not wait_for_node():
-        log("Нода не зарегистрировалась в отведённое время", "error")
-        sys.exit(1)
-    log("Назначение роли ноде и применение taint...", "info")
-    try:
-        label_node()
-        log("Роль и taint назначены", "ok")
-    except subprocess.CalledProcessError:
-        log("Не удалось назначить роль или taint", "error")
-        sys.exit(1)
+    log(f"Назначение роли '{role}' ноде '{node_name}'", "info")
+    label_node(node_name, role)
+
 
 if __name__ == "__main__":
     main()
