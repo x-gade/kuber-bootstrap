@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from utils.logger import log
 from data.collected_info import HOSTNAME, ROLE
 
+# Путь до kubeconfig по умолчанию
+KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 LABEL = f"node-role.kubernetes.io/{ROLE}"
 
 def wait_for_node(timeout=90, interval=3):
@@ -33,6 +35,9 @@ def label_node():
     subprocess.run(cmd_taint, check=True)
 
 def main():
+    # Гарантируем использование корректного kubeconfig при вызове kubectl
+    os.environ.setdefault("KUBECONFIG", KUBECONFIG_PATH)
+
     log("Ожидание регистрации ноды в кластере...", "info")
     if not wait_for_node():
         log("Нода не зарегистрировалась в отведённое время", "error")

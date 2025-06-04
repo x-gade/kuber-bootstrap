@@ -11,6 +11,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from utils.logger import log
 from data.collected_info import ROLE, HOSTNAME
 
+# Путь до kubeconfig, который будет использоваться всеми вызовами kubectl
+KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 KUBELET_CONF = "/etc/kubernetes/kubelet.conf"
 KUBELET_UNIT_FILE = "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
 KUBELET_FLAGS_ENV = "/var/lib/kubelet/kubeadm-flags.env"
@@ -97,6 +99,10 @@ def main():
         log("Пропуск инициализации: текущая нода не является control-plane", "warn")
         return
 
+    # Устанавливаем переменную окружения для kubectl, чтобы гарантировать
+    # корректное подключение к кластеру из всех вызовов этого скрипта
+    os.environ.setdefault("KUBECONFIG", KUBECONFIG_PATH)
+
     start_kubelet()
 
     if not wait_for_apiserver():
@@ -105,7 +111,7 @@ def main():
     if not create_cluster_rolebinding():
         sys.exit(1)
 
-    log("⚠️ Регистрация ноды будет происходить после установки CNI", "warn")
+    log("Регистрация ноды будет происходить после установки CNI", "warn")
     # if not wait_for_node_registration():
     #     sys.exit(1)
 
