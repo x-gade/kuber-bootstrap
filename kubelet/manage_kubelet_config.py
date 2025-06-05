@@ -22,7 +22,6 @@ def calculate_pod_cidr(cluster_cidr: str, new_prefix: int, index: int = 0) -> st
 def write_config(include_flags: bool, bootstrap: bool = False) -> None:
     os.makedirs(CONF_PATH.parent, exist_ok=True)
 
-    role = collected_info.ROLE
     node_ip = collected_info.IP
     pod_cidr = calculate_pod_cidr(collected_info.CLUSTER_POD_CIDR, int(collected_info.CIDR))
 
@@ -40,7 +39,10 @@ def write_config(include_flags: bool, bootstrap: bool = False) -> None:
                 f"--container-runtime-endpoint=unix:///run/containerd/containerd.sock "
                 f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
                 f"--cluster-dns=10.96.0.10 "
-                f"--cluster-domain=cluster.local"
+                f"--cluster-domain=cluster.local "
+                f"--config=/var/lib/kubelet/config.yaml "
+                f"--authentication-token-webhook=true "
+                f"--authorization-mode=Webhook"
             )
             f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
             f.write('ExecStart=\n')
@@ -55,14 +57,15 @@ def write_config(include_flags: bool, bootstrap: bool = False) -> None:
                 f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
                 f"--register-node=false "
                 f"--cluster-dns=10.96.0.10 "
-                f"--cluster-domain=cluster.local"
+                f"--cluster-domain=cluster.local "
+                f"--config=/var/lib/kubelet/config.yaml"
             )
             f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
             f.write('ExecStart=\n')
             f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
 
         else:
-            # memory-only: не меняем ExecStart
+            # memory-only: не указываем параметры — сохраняем ExecStart
             f.write('ExecStart=\n')
             f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
 

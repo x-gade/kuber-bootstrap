@@ -128,6 +128,16 @@ def main():
     generate_unit_file(path, config_path)
     reload_and_start()
 
+    if mode == "prod":
+        rbac_path = Path("data/apiserver-kubelet-client-admin.yaml")
+        if rbac_path.exists():
+            try:
+                subprocess.run(["kubectl", "apply", "-f", str(rbac_path)], check=True)
+                log("RBAC-права для apiserver-kubelet-client применены", "ok")
+            except subprocess.CalledProcessError as e:
+                log(f"Ошибка при применении RBAC: {e}", "error")
+        else:
+            log(f"Файл {rbac_path} не найден — пропускаем применение прав", "warn")
 
 if __name__ == "__main__":
     main()
