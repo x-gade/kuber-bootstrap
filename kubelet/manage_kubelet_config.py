@@ -19,7 +19,7 @@ def calculate_pod_cidr(cluster_cidr: str, new_prefix: int, index: int = 0) -> st
     return str(subnets[index])
 
 
-def write_config(include_flags: bool) -> None:
+def write_config(include_flags: bool, bootstrap: bool = False) -> None:
     os.makedirs(CONF_PATH.parent, exist_ok=True)
 
     role = collected_info.ROLE
@@ -28,17 +28,44 @@ def write_config(include_flags: bool) -> None:
 
     with open(CONF_PATH, "w") as f:
         f.write("[Service]\n")
+
         if include_flags:
             kubelet_extra_args = (
-                f"--allow-privileged=true "
                 f"--node-ip={node_ip} "
-                f"--node-labels=node-role.kubernetes.io/{role}= "
-                f"--register-with-taints=node-role.kubernetes.io/{role}=:NoSchedule "
-                f"--pod-cidr={pod_cidr}"
+                f"--pod-cidr={pod_cidr} "
+                f"--kubeconfig=/etc/kubernetes/kubelet.conf "
+                f"--register-node=true "
+                f"--fail-swap-on=false "
+                f"--cgroup-driver=systemd "
+                f"--container-runtime-endpoint=unix:///run/containerd/containerd.sock "
+                f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
+                f"--cluster-dns=10.96.0.10 "
+                f"--cluster-domain=cluster.local"
             )
             f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
             f.write('ExecStart=\n')
-            f.write('ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_EXTRA_ARGS\n')
+            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
+
+        elif bootstrap:
+            kubelet_extra_args = (
+                f"--container-runtime-endpoint=unix:///run/containerd/containerd.sock "
+                f"--node-ip={node_ip} "
+                f"--fail-swap-on=false "
+                f"--cgroup-driver=systemd "
+                f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
+                f"--register-node=false "
+                f"--cluster-dns=10.96.0.10 "
+                f"--cluster-domain=cluster.local"
+            )
+            f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
+            f.write('ExecStart=\n')
+            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
+
+        else:
+            # memory-only: не меняем ExecStart
+            f.write('ExecStart=\n')
+            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
+
         f.write('EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env\n')
         f.write('MemoryMax=4G\n')
         f.write('OOMScoreAdjust=-999\n')
@@ -65,8 +92,12 @@ def reload_systemd(restart: bool = False) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Управление конфигурацией kubelet")
-    parser.add_argument("--mode", choices=["memory", "flags"], required=True,
-                        help="memory - записать ограничения памяти, flags - задать параметры kubelet и перезапустить")
+    parser.add_argument(
+        "--mode",
+        choices=["memory", "flags", "bootstrap"],
+        required=True,
+        help="memory - только ограничения памяти; flags - финальная настройка; bootstrap — запуск без подключения к API"
+    )
     args = parser.parse_args()
 
     if args.mode == "memory":
@@ -74,7 +105,13 @@ def main():
         write_config(include_flags=False)
         reload_systemd(restart=False)
         log("Перезапуск kubelet НЕ выполняется — он будет произведён на следующем этапе", "info")
-    else:
+
+    elif args.mode == "bootstrap":
+        log("=== Минимальная конфигурация kubelet для bootstrap-режима ===")
+        write_config(include_flags=False, bootstrap=True)
+        reload_systemd(restart=True)
+
+    elif args.mode == "flags":
         log("=== Применение параметров kubelet и перезапуск ===")
         write_config(include_flags=True)
         reload_systemd(restart=True)

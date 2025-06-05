@@ -13,7 +13,7 @@ CONTROL_PLANE_STEPS = [
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
     ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
-    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
+    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
     ("Включение временной сети bridge", "post/enable_temp_network.py"),
     ("Установка Helm", "setup/install_helm.py"),
     ("Генерация сертификатов", "certs/generate_all.py"),
@@ -29,6 +29,7 @@ CONTROL_PLANE_STEPS = [
     ("Инициализация controller-manager и scheduler", "post/initialize_control_plane_components.py"),
     ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
     ("Назначение роли control-plane ноде", "post/label_node.py"),
+
 #    ("Патч controller-менеджера и kube-proxy", "post/patch_controller_flags.py"),
 #    ("Генерация команды подключения нод", "post/join_nodes.py"),
 ]
@@ -46,7 +47,6 @@ NODE_STEPS = [
 ]
 
 def run_script(title, command):
-    # Пропускаем установку бинарников, если нечего устанавливать
     if "install_binaries.py" in command and not os.path.exists("data/missing_binaries.json"):
         log(f"Пропускаю шаг: {title} — отсутствуют недостающие бинарники", "info")
         return
@@ -59,15 +59,12 @@ def run_script(title, command):
         if not os.path.exists(script_path):
             raise FileNotFoundError(f"Файл не найден: {script_path}")
 
-        result = subprocess.run(["python3"] + parts, capture_output=True, text=True)
+        result = subprocess.run(["python3"] + parts, stdout=sys.stdout, stderr=sys.stderr)
 
         if result.returncode != 0:
-            log(f"Ошибка в скрипте {command}:", "error")
-            print(result.stdout)
-            print(result.stderr)
+            log(f"Ошибка в скрипте {command}", "error")
             sys.exit(1)
 
-        print(result.stdout)
         log(f"Завершено: {title}", "ok")
 
     except Exception as e:

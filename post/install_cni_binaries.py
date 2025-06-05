@@ -34,16 +34,18 @@ def check_go():
         error("Go не установлен! Установи его перед запуском этого скрипта.")
     os.environ["PATH"] = f"/usr/local/go/bin:{os.environ['PATH']}"
 
-def clone_cilium():
-    if Path(CILIUM_DIR).exists():
-        success("Папка cilium уже существует, клонирование не требуется.")
-        return
-    log("Клонирование репозитория Cilium...")
-    run(f"git clone https://github.com/cilium/cilium.git {CILIUM_DIR}")
+def clone_or_prepare_repo():
+    if not Path(CILIUM_DIR).exists():
+        log("Клонирование репозитория Cilium...")
+        run(f"git clone https://github.com/cilium/cilium.git {CILIUM_DIR}")
+    else:
+        success("Папка cilium уже существует.")
+        log("Обновление содержимого и проверка ветки...")
+        run("git fetch", cwd=CILIUM_DIR)
 
-def checkout_branch():
-    log(f"Переключение на ветку {CILIUM_BRANCH}...")
+    # Переход на нужную ветку
     run(f"git checkout {CILIUM_BRANCH}", cwd=CILIUM_DIR)
+    run("git reset --hard", cwd=CILIUM_DIR)
 
 def build_plugins():
     log("Сборка CNI плагинов через 'make plugins'...")
@@ -90,7 +92,6 @@ def restart_kubelet():
     else:
         error(f"Не удалось перезапустить kubelet:\n{result.stderr}")
 
-    # Проверка состояния
     log("Проверка состояния kubelet...")
     status = subprocess.run(["systemctl", "is-active", "kubelet"], capture_output=True, text=True)
     if status.returncode == 0 and status.stdout.strip() == "active":
@@ -104,8 +105,7 @@ def restart_kubelet():
 def main():
     print("[START] Установка бинарников Cilium CNI вручную...")
     check_go()
-    clone_cilium()
-    checkout_branch()
+    clone_or_prepare_repo()
     build_plugins()
     copy_binaries()
     generate_cni_config()

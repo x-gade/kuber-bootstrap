@@ -13,6 +13,8 @@ authentication:
     enabled: false
   webhook:
     enabled: true
+  x509:
+    clientCAFile: "/etc/kubernetes/pki/ca.crt"
 authorization:
   mode: Webhook
 runtimeRequestTimeout: "15m"

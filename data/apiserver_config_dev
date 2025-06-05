@@ -26,3 +26,12 @@
 --enable-admission-plugins=NamespaceLifecycle
 --allow-privileged=true
 --disable-admission-plugins=PodSecurity
+
+# отключение облачных и проблемных контроллеров
+--cloud-provider=external
+
+# адреса kubelet'ов, к которым пытаться подключаться
+--kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
+
+# уровень логирования
+--v=4
