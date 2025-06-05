@@ -3,11 +3,11 @@ import subprocess
 import sys
 from utils.logger import log
 
-INSTALL_MODES = ["control-plane", "node"]
+INSTALL_MODES = ["control-plane", "worker"]
 
 # Очерёдность шагов установки для control-plane
 CONTROL_PLANE_STEPS = [
-    ("Сбор информации о ноде", "collect_node_info.py"),
+    ("Сбор информации о ноде", "data/collect_node_info.py control-plane"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
@@ -29,18 +29,14 @@ CONTROL_PLANE_STEPS = [
     ("Инициализация controller-manager и scheduler", "post/initialize_control_plane_components.py"),
     ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
     ("Назначение роли control-plane ноде", "post/label_node.py"),
-
-#    ("Патч controller-менеджера и kube-proxy", "post/patch_controller_flags.py"),
-#    ("Генерация команды подключения нод", "post/join_nodes.py"),
 ]
 
 # Очерёдность шагов установки для worker-ноды
-NODE_STEPS = [
-    ("Сбор информации о ноде", "collect_node_info.py"),
+WORKER_STEPS = [
+    ("Сбор информации о ноде", "data/collect_node_info.py worker"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
-#    ("Патч kubelet аргументов", "setup/patch_kubelet_args.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
     ("Установка Helm", "setup/install_helm.py"),
     ("Получение и выполнение команды join", "post/join_nodes.py"),
@@ -81,7 +77,7 @@ if __name__ == '__main__':
     mode = get_mode()
     log(f"Запуск установки Kubernetes ({mode})", "info")
 
-    steps = CONTROL_PLANE_STEPS if mode == "control-plane" else NODE_STEPS
+    steps = CONTROL_PLANE_STEPS if mode == "control-plane" else WORKER_STEPS
 
     for step_name, script_command in steps:
         run_script(step_name, script_command)

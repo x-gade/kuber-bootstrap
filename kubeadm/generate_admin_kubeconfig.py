@@ -1,19 +1,16 @@
 # kubeadm/generate_admin_kubeconfig.py
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import yaml
 from pathlib import Path
+from utils.logger import log
 
 KUBECONFIG_PATH = Path("/etc/kubernetes/admin.conf")
 PROFILE_EXPORT_PATH = Path("/etc/profile.d/set-kubeconfig.sh")
 
-def log(msg, level="info"):
-    levels = {
-        "info": "[INFO]",
-        "ok": "[OK]",
-        "warn": "[WARN]",
-        "error": "[ERROR]"
-    }
-    print(f"{levels.get(level, '[INFO]')} {msg}")
 
 def generate_admin_kubeconfig():
     log("Генерация admin.kubeconfig...")

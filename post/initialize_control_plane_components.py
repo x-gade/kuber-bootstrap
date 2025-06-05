@@ -3,18 +3,11 @@
 import subprocess
 import os
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from utils.logger import log
 
 KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
-
-def log(msg, level="info"):
-    levels = {
-        "info": "[INFO]",
-        "ok": "[OK]",
-        "error": "[ERROR]",
-        "warn": "[WARN]",
-        "step": "[STEP]"
-    }
-    print(f"{levels.get(level, '[INFO]')} {msg}")
 
 def run(cmd: list, error_msg: str, exit_on_fail=True):
     try:

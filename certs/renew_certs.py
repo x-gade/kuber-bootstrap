@@ -68,11 +68,11 @@ def validate_key_pair(cert_path, key_path):
         key_mod = subprocess.check_output(["openssl", "rsa", "-in", key_path, "-noout", "-modulus"]).strip()
         return cert_mod == key_mod
     except Exception as e:
-        log(f"⚠️ Проверка пары ключ+сертификат не удалась: {e}", "warn")
+        log(f"Проверка пары ключ+сертификат не удалась: {e}", "warn")
         return False
 
 def renew_certificate(name, path):
-    log(f"🔄 Обновление сертификата: {name}", "warn")
+    log(f"Обновление сертификата: {name}", "warn")
     try:
         key_path = path.replace(".crt", ".key")
         csr_path = f"/tmp/{name}.csr"
@@ -92,7 +92,7 @@ def renew_certificate(name, path):
         os.remove(cnf_path)
         return True
     except subprocess.CalledProcessError as e:
-        log(f"❌ Ошибка обновления {name}: {e}", "error")
+        log(f"Ошибка обновления {name}: {e}", "error")
         return False
 
 def restart_service_if_needed(name):
@@ -117,7 +117,7 @@ def check_and_renew():
     # Получение срока действия CA
     ca_not_before, ca_not_after = get_cert_dates(CA_CERT)
     if not ca_not_after:
-        log("⛔️ CA невалиден, отмена ротации", "error")
+        log("CA невалиден, отмена ротации", "error")
         return
 
     # Получаем срок действия CA из cert_info.json (если есть)
@@ -128,11 +128,11 @@ def check_and_renew():
         except:
             cert_ca_date = ca_not_after
     else:
-        log("⚠️ CA не найден в cert_info.json, читаю с диска", "warn")
+        log("CA не найден в cert_info.json, читаю с диска", "warn")
         cert_ca_date = ca_not_after
 
     if (ca_not_after - now).days < RENEW_THRESHOLD_DAYS:
-        log("⚠️ CA скоро истекает, желательно пересоздать и перегенерировать всё", "warn")
+        log("CA скоро истекает, желательно пересоздать и перегенерировать всё", "warn")
 
     for name, cert in certs.items():
         if cert.get("expires_at") == "n/a":
@@ -149,14 +149,14 @@ def check_and_renew():
 
         # Проверка подписи
         if cert.get("signed_by") == "ca" and cert_ca_date != ca_not_after:
-            log(f"📛 {name}: подписан старым CA, требует регенерации", "warn")
+            log(f"{name}: подписан старым CA, требует регенерации", "warn")
             needs_renewal = True
 
         if days_left <= 0:
-            log(f"⛔️ {name}: срок действия истёк!", "error")
+            log(f"{name}: срок действия истёк!", "error")
             needs_renewal = True
         elif days_left <= RENEW_THRESHOLD_DAYS:
-            log(f"⚠️ {name}: истекает через {days_left} дней", "warn")
+            log(f"{name}: истекает через {days_left} дней", "warn")
             needs_renewal = True
         else:
             log(f"{name}: истекает через {days_left} дней", "info")
@@ -172,18 +172,18 @@ def check_and_renew():
                 cert["expires_at"] = new_to.strftime("%Y-%m-%dT%H:%M:%SZ")
                 cert["signed_by"] = "ca"
                 restart_service_if_needed(name)
-                log(f"✅ Обновлён: {name}", "ok")
+                log(f"Обновлён: {name}", "ok")
                 changed = True
             else:
-                log(f"⚠️ Обновлён, но невалиден или не совпадает с ключом: {name}", "warn")
+                log(f"Обновлён, но невалиден или не совпадает с ключом: {name}", "warn")
 
     if changed:
         os.rename(CERT_INFO_FILE, CERT_INFO_FILE + ".bak")
         with open(CERT_INFO_FILE, "w") as f:
             json.dump(certs, f, indent=2)
-        log("📘 cert_info.json обновлён", "ok")
+        log("cert_info.json обновлён", "ok")
     else:
-        log("🔄 Все сертификаты в порядке, обновление не требуется", "ok")
+        log("Все сертификаты в порядке, обновление не требуется", "ok")
 
 
 if __name__ == "__main__":

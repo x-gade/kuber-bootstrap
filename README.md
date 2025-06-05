@@ -10,7 +10,7 @@
 
 ## Состав репозитория
 
-- `collect_node_info.py` – собирает IP, архитектуру и роль узла, сохраняет в `data/collected_info.py`.
+- `data/collect_node_info.py` – собирает IP, архитектуру и роль узла, сохраняет в `data/collected_info.py`.
 - `setup/` – установка зависимостей и Helm, проверка бинарников.
 - `certs/` – генерация и проверка сертификатов.
 - `kubeadm/` – подготовка конфигурации и запуск фаз инициализации.
@@ -23,9 +23,8 @@
 
 ## Быстрый старт
 
-1. Выполните `python3 collect_node_info.py control-plane` или `python3 collect_node_info.py node` на нужном узле.
-2. Запустите `python3 main.py control-plane` для control-plane либо `python3 main.py node` для worker-ноды.
-3. Скрипт поочерёдно выполнит все необходимые шаги, выводя ход процесса в консоль.
+1. Запустите `python3 main.py control-plane` для control-plane либо `python3 main.py node` для worker-ноды.
+2. Скрипт поочерёдно выполнит все необходимые шаги, выводя ход процесса в консоль.
 
 ## Этапы установки
 
@@ -51,3 +50,4 @@
 
 ```bash
 python -m py_compile $(git ls-files '*.py')
+```

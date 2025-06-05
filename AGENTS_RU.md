@@ -14,7 +14,7 @@
 
 ## Обзор директорий
 
-- `collect_node_info.py` — сбор основных данных о хосте и запись в `data/collected_info.py`.
+- `data/collect_node_info.py` — сбор основных данных о хосте и запись в `data/collected_info.py`.
 - `setup/` — установка зависимостей (`install_dependencies.py`), проверка бинарников (`check_binaries.py`), установка Helm (`install_helm.py`).
 - `certs/` — генерация сертификатов (`generate_all.py`) и их обновление (`renew_certs.py`).
 - `kubeadm/` — генерация конфигурации kubeadm и запуск фаз инициализации.
@@ -28,17 +28,17 @@
 ## Использование
 
 Выполните `python3 main.py control-plane` для установки управляющего узла или `python3 main.py node` для обычной ноды.
-Каждый шаг логируется с цветовой маркировкой через `utils/logger.py`. Убедитесь, что `collect_node_info.py` уже выполнен и создал `data/collected_info.py`.
+Каждый шаг логируется с цветовой маркировкой через `utils/logger.py`. Убедитесь, что `data/collect_node_info.py` уже выполнен и создал `data/collected_info.py`.
 
 ## Роли узлов
 
-Скрипт `collect_node_info.py` записывает `data/collected_info.py` с информацией о машине, включая её роль (`control-plane` или `node`). `main.py` читает этот файл, чтобы определить порядок выполнения шагов. Запускайте `collect_node_info.py` на каждой машине и сохраняйте полученный файл рядом со скриптами или перенесите его перед запуском `main.py`.
+Скрипт `data/collect_node_info.py` записывает `data/collected_info.py` с информацией о машине, включая её роль (`control-plane` или `node`). `main.py` читает этот файл, чтобы определить порядок выполнения шагов. Запускайте `collect_node_info.py` на каждой машине и сохраняйте полученный файл рядом со скриптами или перенесите его перед запуском `main.py`.
 
 ## Обзор этапов установки
 
 ### control-plane
 
-1. `collect_node_info.py` — сбор информации о хосте
+1. `data/collect_node_info.py` — сбор информации о хосте
 2. `setup/install_dependencies.py` — установка необходимых пакетов
 3. `setup/check_binaries.py` — проверка наличия бинарников (kubeadm, etcd и др.)
 4. `setup/install_binaries.py` — загрузка отсутствующих бинарников
@@ -65,7 +65,7 @@
 
 ### node
 
-1. `collect_node_info.py` — сбор информации о хосте
+1. `data/collect_node_info.py` — сбор информации о хосте
 2. `setup/install_dependencies.py` — установка зависимостей
 3. `setup/check_binaries.py` — проверка бинарников
 4. `setup/install_binaries.py` — загрузка отсутствующих бинарников

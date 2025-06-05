@@ -102,14 +102,14 @@ def validate_key_pair(cert_path, key_path):
         key_mod = subprocess.check_output(["openssl", "rsa", "-in", key_path, "-noout", "-modulus"]).strip()
         return cert_mod == key_mod
     except Exception as e:
-        log(f"⚠️ Проверка пары ключ+сертификат не удалась: {e}", "warn")
+        log(f"Проверка пары ключ+сертификат не удалась: {e}", "warn")
         return False
 
 def generate_ca():
     if os.path.exists(CA_CERT):
         not_before, not_after = get_cert_dates(CA_CERT)
         if not_after and (not_after - now).days < 30:
-            log("⚠️ CA скоро истекает!", "warn")
+            log("CA скоро истекает!", "warn")
         return
 
     log("Генерация корневого CA", "warn")
@@ -136,7 +136,7 @@ def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False, client_ce
                 "signed_by": "ca"
             }
         else:
-            log(f"⚠️ Не удалось прочитать даты у {name}, возможно, повреждён", "warn")
+            log(f"Не удалось прочитать даты у {name}, возможно, повреждён", "warn")
         return
 
     log(f"Генерация сертификата: {name}", "warn")
@@ -162,7 +162,7 @@ def generate_cert(name, cn, path, key_path, etcd=False, dry_run=False, client_ce
             "signed_by": "ca"
         }
     else:
-        log(f"❌ Несовпадение ключа и сертификата для {name}", "error")
+        log(f"Несовпадение ключа и сертификата для {name}", "error")
 
     os.remove(csr_path)
     os.remove(cnf_path)
@@ -173,13 +173,13 @@ def generate_sa_keys(force=False):
 
     if force or not os.path.exists(sa_key):
         run(["openssl", "genrsa", "-out", sa_key, "2048"])
-        log("🔁 sa.key создан", "ok")
+        log("sa.key создан", "ok")
     else:
         log("sa.key уже существует", "info")
 
     if force or not os.path.exists(sa_pub):
         run(["openssl", "rsa", "-in", sa_key, "-pubout", "-out", sa_pub])
-        log("🔁 sa.pub создан", "ok")
+        log("sa.pub создан", "ok")
     else:
         log("sa.pub уже существует", "info")
 

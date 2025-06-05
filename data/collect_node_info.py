@@ -1,9 +1,11 @@
 # collect_node_info.py
 
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import socket
 import platform
-import sys
 from utils.logger import log
 
 OUTPUT_FILE = "data/collected_info.py"
@@ -24,9 +26,12 @@ def get_ip():
 def collect_info(role="control-plane"):
     log("Сбор данных о машине...", "info")
 
-    if role not in ["control-plane", "node"]:
-        log("Недопустимая роль. Используйте: control-plane или node", "error")
+    if role not in ["control-plane", "worker"]:
+        log("Недопустимая роль. Используйте: control-plane или worker", "error")
         sys.exit(1)
+
+    role_description = "Управляющий (control-plane)" if role == "control-plane" else "Рабочий (worker)"
+    log(f"Узел будет настроен как: {role_description}", "info")
 
     cidr = "26" if role == "control-plane" else "24"
 

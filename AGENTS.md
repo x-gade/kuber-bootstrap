@@ -16,7 +16,7 @@ library and Jinja2.
 
 ## Directory overview
 
-- `collect_node_info.py` – gather basic host data and write `data/collected_info.py`.
+- `data/collect_node_info.py` – gather basic host data and write `data/collected_info.py`.
 - `setup/` – install dependencies (`install_dependencies.py`), check required binaries (`check_binaries.py`), and install Helm (`install_helm.py`).
 - `certs/` – generate certificates (`generate_all.py`) and renew them (`renew_certs.py`).
 - `kubeadm/` – generate kubeadm configuration and run kubeadm phases.
@@ -29,13 +29,14 @@ library and Jinja2.
 
 ## Usage
 
-Run `python3 main.py control-plane` to bootstrap a control plane node or `python3 main.py node` for a worker. Each step prints colored logs via `utils/logger.py`. Ensure `collect_node_info.py` has been executed so that `data/collected_info.py` exists before running other scripts.
+Run `python3 main.py control-plane` to bootstrap a control plane node or `python3 main.py node` for a worker. Each step prints colored logs via `utils/logger.py`. 
+Ensure `data/collect_node_info.py` has been executed so that `data/collected_info.py` exists before running other scripts.
 
 ## Node roles
 
-`collect_node_info.py` writes `data/collected_info.py` with details about the
+`data/collect_node_info.py` writes `data/collected_info.py` with details about the
 machine, including its role (`control-plane` or `node`). `main.py` reads this
-file to decide which sequence of steps to execute. Run `collect_node_info.py`
+file to decide which sequence of steps to execute. Run `data/collect_node_info.py`
 on each host and keep the generated file alongside the scripts or transfer it to
 another machine before running `main.py`.
 
@@ -45,7 +46,7 @@ The exact steps executed by `main.py` differ for a control plane and a worker no
 
 ### control-plane
 
-1. **collect_node_info.py** – gather host data
+1. **data/collect_node_info.py** – gather host data
 2. **setup/install_dependencies.py** – install required packages
 3. **setup/check_binaries.py** – verify presence of kubeadm, etcd and others
 4. **setup/install_binaries.py** – download missing binaries (if any)
@@ -72,7 +73,7 @@ While in `--mode=dev` the API server allows privileged operations and disables P
 
 ### node
 
-1. **collect_node_info.py** – gather host data
+1. **data/collect_node_info.py** – gather host data
 2. **setup/install_dependencies.py** – install required packages
 3. **setup/check_binaries.py** – verify binaries
 4. **setup/install_binaries.py** – download missing binaries

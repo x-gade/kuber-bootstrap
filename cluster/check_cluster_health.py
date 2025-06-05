@@ -21,13 +21,13 @@ def check_health():
         )
         output = result.stdout.decode().strip()
         if output == "ok":
-            log("✅ kube-apiserver отвечает: /healthz → ok", "ok")
+            log("kube-apiserver отвечает: /healthz → ok", "ok")
             return True
         else:
-            log(f"⚠️ kube-apiserver вернул: {output}", "warn")
+            log(f"kube-apiserver вернул: {output}", "warn")
             return False
     except subprocess.CalledProcessError as e:
-        log("❌ Ошибка при обращении к kube-apiserver", "error")
+        log("Ошибка при обращении к kube-apiserver", "error")
         print(e.stderr.decode())
         return False
 
