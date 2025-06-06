@@ -127,6 +127,35 @@ def cleanup_temporary_bridge():
     subprocess.run(["systemctl", "restart", "kubelet"])
     check_kubelet_status()
 
+def apply_sysctl_settings():
+    log("Настройка sysctl параметров для Cilium...", "info")
+    subprocess.run(["sysctl", "-w", "net.ipv4.conf.all.forwarding=1"], check=True)
+    subprocess.run(["sysctl", "-w", "kernel.unprivileged_bpf_disabled=0"], check=True)
+
+    with open("/etc/sysctl.d/99-cilium.conf", "w") as f:
+        f.write("net.ipv4.conf.all.forwarding = 1\n")
+        f.write("kernel.unprivileged_bpf_disabled = 0\n")
+
+    subprocess.run(["sysctl", "--system"], check=True)
+    log("Sysctl параметры применены и сохранены.", "ok")
+
+def ensure_configmap_ca():
+    result = subprocess.run(
+        ["kubectl", "get", "configmap", "kube-root-ca.crt", "-n", "kube-system"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        log("Создаю configmap kube-root-ca.crt из /etc/kubernetes/pki/ca.crt", "info")
+        subprocess.run([
+            "kubectl", "create", "configmap", "kube-root-ca.crt",
+            "--from-file=ca.crt=/etc/kubernetes/pki/ca.crt",
+            "-n", "kube-system"
+        ], check=True)
+    else:
+        log("ConfigMap kube-root-ca.crt уже существует", "ok")
+
+
 def apply_cilium_manifest():
     if not os.path.exists(CILIUM_YAML_PATH):
         generate_cilium_manifest()
@@ -141,6 +170,8 @@ def apply_cilium_manifest():
 
 def main():
     log("== Установка Cilium из исходников с удалением временной bridge-сети ==", "start")
+    apply_sysctl_settings()
+    ensure_configmap_ca()
     ensure_cilium_repo()
     apply_cilium_manifest()
     cleanup_temporary_bridge()

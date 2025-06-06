@@ -23,11 +23,14 @@
 --etcd-certfile={CERT_DIR}/etcd/server.crt
 --etcd-keyfile={CERT_DIR}/etcd/server.key
 
-# Авторизация и плагины
+# Авторизация и admission плагины
 --authorization-mode=Node,RBAC
 --enable-admission-plugins=NodeRestriction,NamespaceLifecycle,ServiceAccount
 
-# Прокси и фронт-прокси
+# Разрешаем запуск привилегированных контейнеров (нужно для Cilium и systemd-подов)
+--allow-privileged=true
+
+# Прокси и агрегатор
 --requestheader-client-ca-file={CERT_DIR}/front-proxy-ca.crt
 --proxy-client-cert-file={CERT_DIR}/front-proxy-client.crt
 --proxy-client-key-file={CERT_DIR}/front-proxy-client.key
@@ -35,3 +38,12 @@
 --requestheader-extra-headers-prefix=X-Remote-Extra-
 --requestheader-group-headers=X-Remote-Group
 --requestheader-username-headers=X-Remote-User
+
+# Указываем внешний клауд-провайдер (чтобы не крашился cloud-controller-manager)
+--cloud-provider=external
+
+# kubelet-адреса для подключения
+--kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
+
+# Логирование (опционально — можно убрать или уменьшить до 2)
+--v=2

@@ -15,3 +15,7 @@ node:
 kube-apiserver:
   version: "v1.30.0"
   path: "/usr/local/bin/kube-apiserver"
+
+kube-controller-manager:
+  version: "v1.30.0"
+  path: "/usr/local/bin/kube-controller-manager"

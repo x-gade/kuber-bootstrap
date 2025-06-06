@@ -23,6 +23,8 @@ CONTROL_PLANE_STEPS = [
     ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py"),
     ("Генерация admin.kubeconfig", "kubeadm/generate_admin_kubeconfig.py"),
     ("Фазовая инициализация кластера через kubeadm", "kubeadm/run_kubeadm_phases.py"),
+    ("Генерация и запуск controller-manager как systemd unit", "systemd/generate_controller_manager_service.py"),
+    ("Создание ServiceAccount и Secret для Cilium", "post/create_cilium_sa_secret.py"),
     ("Установка Go для сборки Cilium", "post/install_go.py"),
     ("Сборка и установка бинарников Cilium", "post/install_cni_binaries.py"),
     ("Применение CNI манифеста", "post/apply_cni.py"),

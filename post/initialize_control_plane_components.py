@@ -3,8 +3,8 @@
 import subprocess
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.logger import log
 
 KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
@@ -22,24 +22,22 @@ def main():
     log("Экспорт переменной KUBECONFIG", "step")
     os.environ["KUBECONFIG"] = KUBECONFIG_PATH
 
-    log("Генерация kubeconfig файлов...", "step")
-    run(
-        ["kubeadm", "init", "phase", "kubeconfig", "controller-manager"],
-        "Ошибка при генерации kubeconfig для controller-manager"
-    )
+    log("Генерация kubeconfig файла для scheduler...", "step")
     run(
         ["kubeadm", "init", "phase", "kubeconfig", "scheduler"],
         "Ошибка при генерации kubeconfig для scheduler"
     )
 
-    log("Генерация pod-манифестов...", "step")
-    run(
-        ["kubeadm", "init", "phase", "control-plane", "controller-manager"],
-        "Ошибка при генерации манифеста для controller-manager"
-    )
+    log("Генерация pod-манифеста scheduler...", "step")
     run(
         ["kubeadm", "init", "phase", "control-plane", "scheduler"],
         "Ошибка при генерации манифеста для scheduler"
+    )
+
+    log("Установка CoreDNS", "step")
+    run(
+        ["kubeadm", "init", "phase", "addon", "coredns"],
+        "Ошибка при установке CoreDNS"
     )
 
     log("Готово! Проверка pod'ов через kubectl get pods -n kube-system", "step")
