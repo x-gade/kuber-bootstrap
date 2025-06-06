@@ -3,15 +3,17 @@
 import argparse
 import os
 import subprocess
-import ipaddress
 import sys
 from pathlib import Path
+from jinja2 import Environment, FileSystemLoader
+import ipaddress
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.logger import log
 from data import collected_info
 
-CONF_PATH = Path("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf")
+TEMPLATE_DIR = Path("data/10-kubelet.conf")
+OUTPUT_PATH = Path("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf")
 
 
 def calculate_pod_cidr(cluster_cidr: str, new_prefix: int, index: int = 0) -> str:
@@ -19,66 +21,35 @@ def calculate_pod_cidr(cluster_cidr: str, new_prefix: int, index: int = 0) -> st
     return str(subnets[index])
 
 
-def write_config(include_flags: bool, bootstrap: bool = False) -> None:
-    os.makedirs(CONF_PATH.parent, exist_ok=True)
+def render_template(mode: str):
+    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
+    template_name = {
+        "memory": "memory-step.conf.j2",
+        "bootstrap": "bootstrap-step.conf.j2",
+        "flags": "flags-step.conf.j2"
+    }.get(mode)
 
-    node_ip = collected_info.IP
+    if not template_name:
+        log(f"Неизвестный режим шаблона: {mode}", "error")
+        sys.exit(1)
+
+    template = env.get_template(template_name)
+
     pod_cidr = calculate_pod_cidr(collected_info.CLUSTER_POD_CIDR, int(collected_info.CIDR))
 
-    with open(CONF_PATH, "w") as f:
-        f.write("[Service]\n")
+    rendered = template.render(
+        node_ip=collected_info.IP,
+        pod_cidr=pod_cidr
+    )
 
-        if include_flags:
-            kubelet_extra_args = (
-                f"--node-ip={node_ip} "
-                f"--pod-cidr={pod_cidr} "
-                f"--kubeconfig=/etc/kubernetes/kubelet.conf "
-                f"--register-node=true "
-                f"--fail-swap-on=false "
-                f"--cgroup-driver=systemd "
-                f"--container-runtime-endpoint=unix:///run/containerd/containerd.sock "
-                f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
-                f"--cluster-dns=10.96.0.10 "
-                f"--cluster-domain=cluster.local "
-                f"--config=/var/lib/kubelet/config.yaml "
-                f"--authentication-token-webhook=true "
-                f"--authorization-mode=Webhook"
-            )
-            f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
-            f.write('ExecStart=\n')
-            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
+    os.makedirs(OUTPUT_PATH.parent, exist_ok=True)
+    with open(OUTPUT_PATH, "w") as f:
+        f.write(rendered)
 
-        elif bootstrap:
-            kubelet_extra_args = (
-                f"--container-runtime-endpoint=unix:///run/containerd/containerd.sock "
-                f"--node-ip={node_ip} "
-                f"--fail-swap-on=false "
-                f"--cgroup-driver=systemd "
-                f"--pod-infra-container-image=k8s.gcr.io/pause:3.9 "
-                f"--register-node=false "
-                f"--cluster-dns=10.96.0.10 "
-                f"--cluster-domain=cluster.local "
-                f"--config=/var/lib/kubelet/config.yaml"
-            )
-            f.write(f'Environment="KUBELET_EXTRA_ARGS={kubelet_extra_args}"\n')
-            f.write('ExecStart=\n')
-            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
-
-        else:
-            # memory-only: не указываем параметры — сохраняем ExecStart
-            f.write('ExecStart=\n')
-            f.write('ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS\n')
-
-        f.write('EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env\n')
-        f.write('MemoryMax=4G\n')
-        f.write('OOMScoreAdjust=-999\n')
-        f.write('Delegate=yes\n')
-        f.write('Slice=kubelet.slice\n')
-
-    log(f"Файл {CONF_PATH} сформирован", "ok")
+    log(f"Файл {OUTPUT_PATH} сгенерирован из шаблона {template_name}", "ok")
 
 
-def reload_systemd(restart: bool = False) -> None:
+def reload_systemd(restart: bool = False):
     subprocess.run(["systemctl", "daemon-reexec"], check=True)
     subprocess.run(["systemctl", "daemon-reload"], check=True)
     if restart:
@@ -94,29 +65,21 @@ def reload_systemd(restart: bool = False) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Управление конфигурацией kubelet")
+    parser = argparse.ArgumentParser(description="Генерация 10-kubelet.conf через шаблон")
     parser.add_argument(
         "--mode",
         choices=["memory", "flags", "bootstrap"],
         required=True,
-        help="memory - только ограничения памяти; flags - финальная настройка; bootstrap — запуск без подключения к API"
+        help="memory — ограничение памяти, bootstrap — урезанный старт, flags — финальные флаги"
     )
     args = parser.parse_args()
 
+    log(f"==> Применение шаблона kubelet ({args.mode})", "info")
+    render_template(args.mode)
+
     if args.mode == "memory":
-        log("=== Применение ограничений памяти для kubelet ===")
-        write_config(include_flags=False)
-        reload_systemd(restart=False)
-        log("Перезапуск kubelet НЕ выполняется — он будет произведён на следующем этапе", "info")
-
-    elif args.mode == "bootstrap":
-        log("=== Минимальная конфигурация kubelet для bootstrap-режима ===")
-        write_config(include_flags=False, bootstrap=True)
-        reload_systemd(restart=True)
-
-    elif args.mode == "flags":
-        log("=== Применение параметров kubelet и перезапуск ===")
-        write_config(include_flags=True)
+        log("Перезапуск kubelet НЕ требуется на этом этапе", "info")
+    else:
         reload_systemd(restart=True)
 
 
