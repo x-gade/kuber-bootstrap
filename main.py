@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
 import os
 import subprocess
 import sys
+import argparse
+import argcomplete
 from utils.logger import log
 
 INSTALL_MODES = ["control-plane", "worker"]
@@ -70,10 +73,22 @@ def run_script(title, command):
         sys.exit(1)
 
 def get_mode():
-    if len(sys.argv) < 2 or sys.argv[1] not in INSTALL_MODES:
-        print(f"Использование: python3 main.py <{'|'.join(INSTALL_MODES)}>")
-        sys.exit(1)
-    return sys.argv[1]
+    """
+    Парсит аргумент установки (control-plane или worker) с поддержкой автодополнения.
+    """
+    parser = argparse.ArgumentParser(description="Запуск установки Kubernetes")
+    parser.add_argument(
+        "mode",
+        choices=INSTALL_MODES,
+        help="Режим установки: control-plane или worker"
+    )
+
+    # Автоматически активируем autocompletion только если переменная окружения выставлена
+    if "_ARGCOMPLETE" in os.environ:
+        argcomplete.autocomplete(parser)
+
+    args = parser.parse_args()
+    return args.mode
 
 if __name__ == '__main__':
     mode = get_mode()

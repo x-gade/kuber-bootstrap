@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Установка Cilium и применение CNI-манифеста.
+Install Cilium and apply the CNI manifest.
+"""
+
 import os
 import sys
 import subprocess
@@ -13,16 +18,22 @@ sys.path.append(PROJECT_ROOT)
 from utils.logger import log
 from data.collected_info import IP
 
-# === Константы ===
+# === Константы / Constants ===
 CILIUM_REPO = "https://github.com/cilium/cilium.git"
 CILIUM_BRANCH = "v1.14.6"
 CILIUM_DIR = "/opt/cni/cilium"
 CILIUM_HELM_DIR = os.path.join(CILIUM_DIR, "install/kubernetes/cilium")
 CILIUM_YAML_PATH = os.path.join(CILIUM_DIR, "install/kubernetes/cilium.yaml")
+CILIUM_VALUES_RENDERED = os.path.join(PROJECT_ROOT, "data", "cni", "cilium_values.yaml")
 CNI_CONFIG_DIR = "/etc/cni/net.d"
 TEMP_CNI_FILE = os.path.join(CNI_CONFIG_DIR, "10-bridge-temporary.conf")
 
 def run_shell_cmd(cmd: list, cwd=None, capture=False):
+    """
+    Запускает shell-команду и возвращает результат.
+    Run a shell command and return the result.
+    """
+
     try:
         result = subprocess.run(
             cmd, check=True, cwd=cwd,
@@ -36,6 +47,11 @@ def run_shell_cmd(cmd: list, cwd=None, capture=False):
         return 1
 
 def ensure_cilium_repo():
+    """
+    Клонирует репозиторий Cilium и переключается на нужную ветку.
+    Clone the Cilium repo and checkout the desired branch.
+    """
+
     if os.path.exists(CILIUM_DIR):
         log("Папка cilium уже существует, клонирование не требуется.", "ok")
     else:
@@ -50,6 +66,11 @@ def ensure_cilium_repo():
         sys.exit(1)
 
 def detect_cluster_conditions():
+    """
+    Определяет параметры установки в зависимости от числа нод.
+    Detects cluster conditions and sets install parameters based on node count.
+    """
+
     log("Определение условий кластера...", "info")
     try:
         result = subprocess.run(
@@ -77,8 +98,12 @@ def detect_cluster_conditions():
         sys.exit(1)
 
 def generate_cilium_manifest():
-    values_template = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml.j2")
-    values_rendered = os.path.join(PROJECT_ROOT, "data", "cilium_values.yaml")
+    """
+    Генерирует Helm-манифест Cilium и сохраняет его.
+    Render Cilium Helm manifest and save it to file.
+    """
+
+    values_template = os.path.join(PROJECT_ROOT, "data", "cni", "cilium_values.yaml.j2")
     port = "6443"
 
     overrides = detect_cluster_conditions()
@@ -86,13 +111,13 @@ def generate_cilium_manifest():
     with open(values_template) as f:
         tmpl = Template(f.read())
 
-    with open(values_rendered, "w") as f:
+    with open(CILIUM_VALUES_RENDERED, "w") as f:
         f.write(tmpl.render(IP=IP, PORT=port, **overrides))
 
     cmd = [
         "helm", "template", "cilium", CILIUM_HELM_DIR,
         "--namespace", "kube-system",
-        "--values", values_rendered
+        "--values", CILIUM_VALUES_RENDERED
     ]
 
     try:
@@ -104,6 +129,11 @@ def generate_cilium_manifest():
         sys.exit(1)
 
 def check_kubelet_status():
+    """
+    Проверяет состояние kubelet после перезапуска.
+    Check the kubelet service status after restart.
+    """
+
     log("Проверка статуса kubelet после перезапуска...", "info")
     try:
         result = subprocess.run(["systemctl", "is-active", "kubelet"], check=True, stdout=subprocess.PIPE)
@@ -117,6 +147,11 @@ def check_kubelet_status():
         sys.exit(1)
 
 def cleanup_temporary_bridge():
+    """
+    Удаляет временный CNI-мост и перезапускает kubelet.
+    Delete temporary bridge CNI config and restart kubelet.
+    """
+
     if os.path.exists(TEMP_CNI_FILE):
         log("Удаление временного CNI (bridge)...", "info")
         os.remove(TEMP_CNI_FILE)
@@ -128,6 +163,11 @@ def cleanup_temporary_bridge():
     check_kubelet_status()
 
 def apply_sysctl_settings():
+    """
+    Настраивает и сохраняет параметры sysctl для Cilium.
+    Configure and persist sysctl settings required by Cilium.
+    """
+
     log("Настройка sysctl параметров для Cilium...", "info")
     subprocess.run(["sysctl", "-w", "net.ipv4.conf.all.forwarding=1"], check=True)
     subprocess.run(["sysctl", "-w", "kernel.unprivileged_bpf_disabled=0"], check=True)
@@ -140,6 +180,11 @@ def apply_sysctl_settings():
     log("Sysctl параметры применены и сохранены.", "ok")
 
 def ensure_configmap_ca():
+    """
+    Создаёт configmap с корневым сертификатом, если он отсутствует.
+    Ensure kube-root-ca.crt ConfigMap exists in kube-system namespace.
+    """
+
     result = subprocess.run(
         ["kubectl", "get", "configmap", "kube-root-ca.crt", "-n", "kube-system"],
         stdout=subprocess.DEVNULL,
@@ -155,8 +200,12 @@ def ensure_configmap_ca():
     else:
         log("ConfigMap kube-root-ca.crt уже существует", "ok")
 
-
 def apply_cilium_manifest():
+    """
+    Удаляет предыдущий манифест Cilium, применяет новый и очищает временные файлы.
+    Delete previous Cilium manifest, apply the new one, and clean up temp files.
+    """
+
     if not os.path.exists(CILIUM_YAML_PATH):
         generate_cilium_manifest()
 
@@ -168,7 +217,16 @@ def apply_cilium_manifest():
         log("Не удалось применить манифест Cilium", "error")
         sys.exit(1)
 
+    if os.path.exists(CILIUM_VALUES_RENDERED):
+        os.remove(CILIUM_VALUES_RENDERED)
+        log("Временный файл values для Cilium удалён.", "info")
+
 def main():
+    """
+    Основной процесс установки Cilium и очистки временных настроек.
+    Main process to install Cilium and clean up temporary setup.
+    """
+
     log("== Установка Cilium из исходников с удалением временной bridge-сети ==", "start")
     apply_sysctl_settings()
     ensure_configmap_ca()
