@@ -27,11 +27,12 @@ CONTROL_PLANE_STEPS = [
     ("Генерация admin.kubeconfig", "kubeadm/generate_admin_kubeconfig.py"),
     ("Фазовая инициализация кластера через kubeadm", "kubeadm/run_kubeadm_phases.py"),
     ("Генерация и запуск controller-manager как systemd unit", "systemd/generate_controller_manager_service.py"),
+    ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
     ("Создание ServiceAccount и Secret для Cilium", "post/create_cilium_sa_secret.py"),
     ("Установка Go для сборки Cilium", "post/install_go.py"),
     ("Сборка и установка бинарников Cilium", "post/install_cni_binaries.py"),
     ("Применение CNI манифеста", "post/apply_cni.py"),
-    ("Инициализация controller-manager и scheduler", "post/initialize_control_plane_components.py"),
+    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
     ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
     ("Назначение роли control-plane ноде", "post/label_node.py"),
 ]

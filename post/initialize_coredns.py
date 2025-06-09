@@ -22,18 +22,6 @@ def main():
     log("Экспорт переменной KUBECONFIG", "step")
     os.environ["KUBECONFIG"] = KUBECONFIG_PATH
 
-    log("Генерация kubeconfig файла для scheduler...", "step")
-    run(
-        ["kubeadm", "init", "phase", "kubeconfig", "scheduler"],
-        "Ошибка при генерации kubeconfig для scheduler"
-    )
-
-    log("Генерация pod-манифеста scheduler...", "step")
-    run(
-        ["kubeadm", "init", "phase", "control-plane", "scheduler"],
-        "Ошибка при генерации манифеста для scheduler"
-    )
-
     log("Установка CoreDNS", "step")
     run(
         ["kubeadm", "init", "phase", "addon", "coredns"],
