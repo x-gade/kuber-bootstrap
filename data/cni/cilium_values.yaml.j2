@@ -1,9 +1,16 @@
-kubeProxyReplacement: "strict"
+kubeProxyReplacement: "partial"
 k8sServiceHost: {{ IP }}
 k8sServicePort: {{ PORT }}
+debug:
+  enabled: true
+  verbose: "datapath envoy"
 
 ipam:
-  mode: "kubernetes"
+  mode: "cluster-pool"
+  operator:
+    clusterPoolIPv4PodCIDRList:
+      - "{{ CLUSTER_POD_CIDR }}"
+    clusterPoolIPv4MaskSize: 24
 
 hostServices:
   enabled: false
@@ -32,6 +39,9 @@ bpf:
 
 agent:
   enabled: true
+  env:
+    - name: CILIUM_DEBUG
+      value: "true"
   nodeSelector:
     node-role.kubernetes.io/control-plane: "true"
   {% if ENABLE_TOLERATIONS %}
@@ -42,11 +52,28 @@ agent:
     - key: "node.kubernetes.io/not-ready"
       operator: "Exists"
       effect: "NoSchedule"
+    - key: "node.cilium.io/agent-not-ready"
+      operator: "Exists"
+      effect: "NoSchedule"
+  {% endif %}
+  {% if not DISABLE_AGENT_AFFINITY %}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                io.cilium/app: cilium
+            topologyKey: kubernetes.io/hostname
   {% endif %}
 
 operator:
   enabled: true
   replicas: {{ REPLICAS }}
+  env:
+    - name: CILIUM_DEBUG
+      value: "true"
   nodeSelector:
     node-role.kubernetes.io/control-plane: "true"
   {% if ENABLE_TOLERATIONS %}
@@ -55,18 +82,26 @@ operator:
       operator: "Exists"
       effect: "NoSchedule"
     - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node.cilium.io/agent-not-ready"
       operator: "Exists"
       effect: "NoSchedule"
   {% endif %}
   {% if not DISABLE_AFFINITY %}
   affinity:
     podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            io.cilium/app: operator
-        topologyKey: kubernetes.io/hostname
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                io.cilium/app: operator
+            topologyKey: kubernetes.io/hostname
   {% endif %}
 
 hubble:
   enabled: false
+
+cni:
+  customConf: true

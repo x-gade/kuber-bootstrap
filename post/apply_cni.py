@@ -9,6 +9,7 @@ import sys
 import subprocess
 import shutil
 import json
+import time
 from jinja2 import Template
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +17,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
 sys.path.append(PROJECT_ROOT)
 
 from utils.logger import log
-from data.collected_info import IP
+from data.collected_info import IP, CLUSTER_POD_CIDR
 
 # === Константы / Constants ===
 CILIUM_REPO = "https://github.com/cilium/cilium.git"
@@ -97,27 +98,67 @@ def detect_cluster_conditions():
         log(f"Ошибка при анализе нод: {e}", "error")
         sys.exit(1)
 
+def patch_custom_cni_conf():
+    """
+    Устанавливает custom-cni-conf=true в configmap cilium-config.
+    Sets custom-cni-conf=true in the cilium-config ConfigMap.
+    """
+    log("Проверка и патч ConfigMap cilium-config (custom-cni-conf=true)...", "info")
+    try:
+        subprocess.run([
+            "kubectl", "patch", "configmap", "cilium-config",
+            "-n", "kube-system",
+            "--type", "merge",
+            "-p", '{"data":{"custom-cni-conf":"true"}}'
+        ], check=True)
+        log("ConfigMap cilium-config успешно обновлён.", "ok")
+    except subprocess.CalledProcessError:
+        log("Не удалось обновить ConfigMap cilium-config!", "error")
+        sys.exit(1)
+
 def generate_cilium_manifest():
     """
     Генерирует Helm-манифест Cilium и сохраняет его.
     Render Cilium Helm manifest and save it to file.
     """
+    log("Генерация Helm-манифеста Cilium...", "info")
 
     values_template = os.path.join(PROJECT_ROOT, "data", "cni", "cilium_values.yaml.j2")
     port = "6443"
 
+    if not CLUSTER_POD_CIDR:
+        log("CLUSTER_POD_CIDR не задан — невозможна генерация Cilium-манифеста", "error")
+        sys.exit(1)
+
     overrides = detect_cluster_conditions()
 
-    with open(values_template) as f:
-        tmpl = Template(f.read())
+    context = {
+        "IP": IP,
+        "PORT": port,
+        "CLUSTER_POD_CIDR": CLUSTER_POD_CIDR,
+        "REPLICAS": int(overrides["REPLICAS"]),
+        "DISABLE_AFFINITY": bool(overrides["DISABLE_AFFINITY"]),
+        "ENABLE_TOLERATIONS": bool(overrides["ENABLE_TOLERATIONS"]),
+    }
+
+    try:
+        with open(values_template) as f:
+            tmpl = Template(f.read())
+        rendered_values = tmpl.render(**context)
+    except Exception as e:
+        log(f"Ошибка при рендере шаблона values-файла: {e}", "error")
+        sys.exit(1)
 
     with open(CILIUM_VALUES_RENDERED, "w") as f:
-        f.write(tmpl.render(IP=IP, PORT=port, **overrides))
+        f.write(rendered_values)
+    log(f"Сгенерирован values-файл: {CILIUM_VALUES_RENDERED}", "ok")
 
     cmd = [
         "helm", "template", "cilium", CILIUM_HELM_DIR,
         "--namespace", "kube-system",
-        "--values", CILIUM_VALUES_RENDERED
+        "--values", CILIUM_VALUES_RENDERED,
+        "--include-crds",
+        "--set", "crd.annotations="
     ]
 
     try:
@@ -200,6 +241,25 @@ def ensure_configmap_ca():
     else:
         log("ConfigMap kube-root-ca.crt уже существует", "ok")
 
+def wait_for_configmap(name: str, namespace: str, timeout: int = 60):
+    """
+    Ожидает появления configmap в заданном namespace.
+    Wait for a ConfigMap to appear within timeout.
+    """
+    log(f"Ожидание появления ConfigMap {name} в namespace {namespace} (до {timeout} сек)...", "info")
+    for i in range(timeout):
+        result = subprocess.run(
+            ["kubectl", "get", "configmap", name, "-n", namespace],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if result.returncode == 0:
+            log(f"ConfigMap {name} найден через {i} сек", "ok")
+            return
+        time.sleep(1)
+    log(f"ConfigMap {name} не появился за {timeout} сек", "error")
+    sys.exit(1)
+
 def apply_cilium_manifest():
     """
     Удаляет предыдущий манифест Cilium, применяет новый и очищает временные файлы.
@@ -217,9 +277,22 @@ def apply_cilium_manifest():
         log("Не удалось применить манифест Cilium", "error")
         sys.exit(1)
 
-    if os.path.exists(CILIUM_VALUES_RENDERED):
-        os.remove(CILIUM_VALUES_RENDERED)
-        log("Временный файл values для Cilium удалён.", "info")
+#    if os.path.exists(CILIUM_VALUES_RENDERED):
+#        os.remove(CILIUM_VALUES_RENDERED)
+#        log("Временный файл values для Cilium удалён.", "info")
+
+def mount_bpf_fs():
+    """
+    Монтирует BPF файловую систему, если она не смонтирована.
+    Mount BPF filesystem if not already mounted.
+    """
+    bpf_path = "/sys/fs/bpf"
+    if not os.path.ismount(bpf_path):
+        log("Монтирую BPF файловую систему...", "info")
+        os.makedirs(bpf_path, exist_ok=True)
+        subprocess.run(["mount", "-t", "bpf", "bpffs", bpf_path], check=True)
+    else:
+        log("BPF уже смонтирован", "ok")
 
 def main():
     """
@@ -229,9 +302,12 @@ def main():
 
     log("== Установка Cilium из исходников с удалением временной bridge-сети ==", "start")
     apply_sysctl_settings()
+    mount_bpf_fs()
     ensure_configmap_ca()
     ensure_cilium_repo()
     apply_cilium_manifest()
+    wait_for_configmap("cilium-config", "kube-system")
+    patch_custom_cni_conf()
     cleanup_temporary_bridge()
     log("Cilium установлен, bridge удалён. Можно продолжать установку.", "ok")
 

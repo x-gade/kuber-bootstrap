@@ -1,10 +1,18 @@
 [Service]
 Environment="KUBELET_EXTRA_ARGS=\
 --node-ip={{ node_ip }} \
+--pod-cidr={{ pod_cidr }} \
 --kubeconfig=/etc/kubernetes/kubelet.conf \
 --register-node=true \
+--fail-swap-on=false \
+--cgroup-driver=systemd \
 --container-runtime-endpoint=unix:///run/containerd/containerd.sock \
---config=/var/lib/kubelet/config.yaml"
+--pod-infra-container-image=k8s.gcr.io/pause:3.9 \
+--cluster-dns=10.96.0.10 \
+--cluster-domain=cluster.local \
+--config=/var/lib/kubelet/config.yaml \
+--authentication-token-webhook=true \
+--authorization-mode=Webhook"
 ExecStart=
 ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS
 EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env

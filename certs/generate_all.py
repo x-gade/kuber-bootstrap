@@ -7,8 +7,9 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import log
-from data.collected_info import IP, HOSTNAME
+from data.collected_info import IP, HOSTNAME, IP
 
+PUBLIC_IP = IP
 PKI_DIR = "/etc/kubernetes/pki"
 ETCD_DIR = f"{PKI_DIR}/etcd"
 CERT_INFO_FILE = "certs/cert_info.json"
@@ -46,7 +47,7 @@ def write_openssl_cnf(cn, client_cert=False):
             "kubernetes", "kubernetes.default", "kubernetes.default.svc",
             "kubernetes.default.svc.cluster.local"
         ]
-        ip_addresses += ["127.0.0.1", "10.96.0.1"]
+        ip_addresses += ["127.0.0.1", "10.96.0.1", PUBLIC_IP]
 
     if "etcd" in cn:
         dns_names.append("localhost")

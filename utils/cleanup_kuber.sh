@@ -7,6 +7,7 @@ systemctl stop kubelet || true
 systemctl stop etcd || true
 systemctl stop kube-apiserver || true
 systemctl stop kube-controller-manager || true
+systemctl stop kube-scheduler || true
 systemctl stop kube-cert-renew.timer || true
 systemctl stop kube-cert-renew.service || true
 
@@ -15,6 +16,7 @@ systemctl disable kubelet || true
 systemctl disable etcd || true
 systemctl disable kube-apiserver || true
 systemctl disable kube-controller-manager || true
+systemctl disable kube-scheduler || true
 systemctl disable kube-cert-renew.timer || true
 systemctl disable kube-cert-renew.service || true
 
@@ -23,6 +25,7 @@ rm -f /etc/systemd/system/kubelet.service
 rm -f /etc/systemd/system/etcd.service
 rm -f /etc/systemd/system/kube-apiserver.service
 rm -f /etc/systemd/system/kube-controller-manager.service
+rm -f /etc/systemd/system/kube-scheduler.service
 rm -f /etc/systemd/system/kube-cert-renew.service
 rm -f /etc/systemd/system/kube-cert-renew.timer
 rm -rf /etc/systemd/system/kubelet.service.d
@@ -35,6 +38,7 @@ rm -f /usr/local/bin/kubectl
 rm -f /usr/local/bin/kubelet
 rm -f /usr/local/bin/kube-apiserver
 rm -f /usr/local/bin/kube-controller-manager
+rm -f /usr/local/bin/kube-scheduler
 rm -f /usr/local/bin/etcd
 
 echo "[CLEANUP] Принудительное размонтирование всех залипших kubelet-монтов..."

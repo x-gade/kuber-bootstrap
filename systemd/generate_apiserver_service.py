@@ -128,7 +128,7 @@ def main():
     generate_unit_file(path, config_path)
     reload_and_start()
 
-    if mode == "prod":
+    if mode in ("dev", "prod"):
         rbac_path = Path("data/apiserver-kubelet-client-admin.yaml")
         if rbac_path.exists():
             try:
