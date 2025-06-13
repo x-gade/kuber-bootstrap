@@ -17,7 +17,7 @@ CONTROL_PLANE_STEPS = [
     ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
-    ("Включение временной сети bridge", "post/enable_temp_network.py"),
+#    ("Включение временной сети bridge", "post/enable_temp_network.py"),
     ("Установка Helm", "setup/install_helm.py"),
     ("Генерация сертификатов", "certs/generate_all.py"),
     ("Генерация kubelet kubeconfig", "kubelet/generate_kubelet_kubeconfig.py"),
@@ -31,10 +31,11 @@ CONTROL_PLANE_STEPS = [
     ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
 
     ("Назначение роли control-plane ноде", "post/label_node.py"),
-    ("Создание ServiceAccount и Secret для Cilium", "post/create_cilium_sa_secret.py"),
-    ("Установка Go для сборки Cilium", "post/install_go.py"),
-    ("Сборка и установка бинарников Cilium", "post/install_cni_binaries.py"),
-    ("Применение CNI манифеста", "post/apply_cni.py"),
+#    ("Создание ServiceAccount и Secret для Cilium", "post/create_cilium_sa_secret.py"),
+#    ("Установка Go для сборки Cilium", "post/install_go.py"),
+#    ("Сборка и установка бинарников Cilium", "post/install_cni_binaries.py"),
+#    ("Проверка маунтов BPF и Cilium", "post/verify_bpf_mount.py"),
+#    ("Применение CNI манифеста", "post/apply_cni.py"),
 
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
 
