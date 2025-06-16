@@ -12,8 +12,9 @@ INSTALL_MODES = ["control-plane", "worker"]
 CONTROL_PLANE_STEPS = [
     ("Сбор информации о ноде", "data/collect_node_info.py control-plane"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
-    ("Проверка бинарников", "setup/check_binaries.py"),
+    ("Проверка бинарников", "setup/check_binaries.py control-plane"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
+    ("Установка конифгурационного файла containered", "setup/install_containerd.py"),
     ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
@@ -31,13 +32,11 @@ CONTROL_PLANE_STEPS = [
     ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
 
     ("Назначение роли control-plane ноде", "post/label_node.py"),
-#    ("Создание ServiceAccount и Secret для Cilium", "post/create_cilium_sa_secret.py"),
-#    ("Установка Go для сборки Cilium", "post/install_go.py"),
-#    ("Сборка и установка бинарников Cilium", "post/install_cni_binaries.py"),
-#    ("Проверка маунтов BPF и Cilium", "post/verify_bpf_mount.py"),
-#    ("Применение CNI манифеста", "post/apply_cni.py"),
 
+    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
+    ("Установка Cilium","post/generate_cilium_values.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
+    ("Патч kubelet для продовой среды", "kubelet/manage_kubelet_config.py --mode flags")
 
 #    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
 #    ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
@@ -49,7 +48,7 @@ CONTROL_PLANE_STEPS = [
 WORKER_STEPS = [
     ("Сбор информации о ноде", "data/collect_node_info.py worker"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
-    ("Проверка бинарников", "setup/check_binaries.py"),
+    ("Проверка бинарников", "setup/check_binaries.py worker"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
     ("Установка Helm", "setup/install_helm.py"),

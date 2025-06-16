@@ -26,7 +26,7 @@ ExecStart=/usr/local/bin/etcd \
   --peer-client-cert-auth=true \
   --peer-trusted-ca-file=/etc/kubernetes/pki/ca.crt
 
-MemoryMax=2G
+MemoryMax=8G
 MemorySwapMax=infinity
 OOMScoreAdjust=-999
 

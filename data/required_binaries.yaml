@@ -3,14 +3,21 @@ control-plane:
   - kubelet
   - kubectl
   - etcd
-  - containerd
+  - etcdctl
+  - cilium
+  - crictl
+  - helm
+  - kube-apiserver
+  - kube-controller-manager
+  - kube-scheduler
+  - runc
 
-node:
+worker:
   - kubeadm
   - kubelet
   - kubectl
-  - containerd
-
+  - crictl
+  - runc
 
 kube-apiserver:
   version: "v1.30.0"

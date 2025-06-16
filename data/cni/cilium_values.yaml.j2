@@ -1,107 +1,84 @@
-kubeProxyReplacement: "partial"
 k8sServiceHost: {{ IP }}
-k8sServicePort: {{ PORT }}
-debug:
-  enabled: true
-  verbose: "datapath envoy"
+k8sServicePort: 6443
+
+cni:
+  install: true
+  customConf: false
+  binPath: /opt/cni/bin
+  confPath: /etc/cni/net.d
+  chainingMode: ""
 
 ipam:
-  mode: "cluster-pool"
-  operator:
-    clusterPoolIPv4PodCIDRList:
-      - "{{ CLUSTER_POD_CIDR }}"
-    clusterPoolIPv4MaskSize: 24
+  mode: kubernetes
 
-hostServices:
-  enabled: false
-
-externalIPs:
-  enabled: true
-
-nodePort:
-  enabled: true
-
-endpointSlices:
-  enabled: true
-
-routingMode: "native"
-ipv4NativeRoutingCIDR: "{{ CLUSTER_POD_CIDR }}"
-tunnel: "disabled"
-
+routingMode: native
+ipv4NativeRoutingCIDR: {{ CLUSTER_POD_CIDR }}
 ipv4:
   enabled: true
-
 ipv6:
   enabled: false
 
-bpf:
-  masquerade: true
-
-agent:
+kubeProxyReplacement: false
+socketLB:
   enabled: true
-  env:
-    - name: CILIUM_DEBUG
-      value: "true"
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: "true"
-  {% if ENABLE_TOLERATIONS %}
-  tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Exists"
-      effect: "NoSchedule"
-    - key: "node.kubernetes.io/not-ready"
-      operator: "Exists"
-      effect: "NoSchedule"
-    - key: "node.cilium.io/agent-not-ready"
-      operator: "Exists"
-      effect: "NoSchedule"
-  {% endif %}
-  {% if not DISABLE_AGENT_AFFINITY %}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchLabels:
-                io.cilium/app: cilium
-            topologyKey: kubernetes.io/hostname
-  {% endif %}
-
-operator:
+hostServices:
   enabled: true
-  replicas: {{ REPLICAS }}
-  env:
-    - name: CILIUM_DEBUG
-      value: "true"
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: "true"
-  {% if ENABLE_TOLERATIONS %}
-  tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Exists"
-      effect: "NoSchedule"
-    - key: "node.kubernetes.io/not-ready"
-      operator: "Exists"
-      effect: "NoSchedule"
-    - key: "node.cilium.io/agent-not-ready"
-      operator: "Exists"
-      effect: "NoSchedule"
-  {% endif %}
-  {% if not DISABLE_AFFINITY %}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchLabels:
-                io.cilium/app: operator
-            topologyKey: kubernetes.io/hostname
-  {% endif %}
+externalIPs:
+  enabled: true
+nodePort:
+  enabled: true
+  enableHealthCheck: false
+hostPort:
+  enabled: true
+
+enableIPv4Masquerade: true
 
 hubble:
   enabled: false
 
-cni:
-  customConf: true
+nodeinit:
+  enabled: false
+
+operator:
+  enabled: true
+  replicas: {{ OPERATOR_REPLICAS }}
+  rollOutPods: true
+
+l7Proxy: false
+
+enablePrometheusMetrics: false
+
+endpointRoutes:
+  enabled: false
+
+meshAuth:
+  enabled: false
+
+clustermesh:
+  apiserver:
+    service:
+      externalTrafficPolicy: Cluster
+      internalTrafficPolicy: Cluster
+
+bpf:
+  datapathMode: veth
+  distributedLRU:
+    enabled: true
+  mapDynamicSizeRatio: 0.08
+bpfClockProbe: true
+
+labels: "io\\.kubernetes\\.pod\\.namespace app"
+
+imagePullSecrets: []
+
+containerSecurityContext:
+  privileged: true
+  capabilities:
+    add:
+      - IPC_LOCK
+
+extraConfig:
+  ca.crt: |
+{{ ca_crt.strip() | indent(4, True) }}
+
+

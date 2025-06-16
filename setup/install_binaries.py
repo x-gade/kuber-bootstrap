@@ -2,35 +2,85 @@
 
 import os
 import sys
+import json
+import tarfile
+from pathlib import Path
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import subprocess
 from utils.logger import log
 
-ETCD_VERSION = "v3.5.12"
-ETCD_URL = f"https://github.com/etcd-io/etcd/releases/download/{ETCD_VERSION}/etcd-{ETCD_VERSION}-linux-amd64.tar.gz"
-ARCHIVE_NAME = f"etcd-{ETCD_VERSION}-linux-amd64.tar.gz"
-EXTRACTED_FOLDER = f"etcd-{ETCD_VERSION}-linux-amd64"
+MISSING_FILE = "data/missing_binaries.json"
+BINARIES_DIR = Path("binares")
+INSTALL_PATH = Path("/usr/local/bin")
+TMP_DIR = Path("/tmp")
 
-def run(cmd):
-    log(f"[CMD] {' '.join(cmd)}", "info")
-    subprocess.run(cmd, check=True)
+def install_binary_from_archive(binary: str):
+    """
+    Extract and install a binary from its archive.
+    Распаковывает и устанавливает бинарник из архива.
+    """
+    archive_path = BINARIES_DIR / f"{binary}.tar.gz"
+
+    if not archive_path.exists():
+        log(f"Архив не найден для {binary}: {archive_path}", "error")
+        return
+
+    log(f"Установка {binary} из архива...", "info")
+
+    try:
+        with tarfile.open(archive_path, "r:gz") as tar:
+            if binary == "cilium":
+                # Особая логика: извлекаем в binares/cilium/
+                target_dir = BINARIES_DIR / "cilium"
+                tar.extractall(path=target_dir)
+                cli_binary = target_dir / "cilium"
+                if cli_binary.exists():
+                    cli_binary.chmod(0o755)
+                    cli_binary.replace(INSTALL_PATH / "cilium")
+                    log(f"cilium CLI установлен в /usr/local/bin/cilium", "ok")
+                else:
+                    log(f"cilium CLI не найден после распаковки", "error")
+                return
+
+            # Обычные бинарники — ищем одноимённый файл внутри архива
+            member = next((m for m in tar.getmembers() if m.name == binary), None)
+            if not member:
+                log(f"{binary} не найден внутри архива {archive_path}", "error")
+                return
+
+            tar.extract(member, path=TMP_DIR)
+            extracted = TMP_DIR / binary
+            extracted.chmod(0o755)
+            extracted.replace(INSTALL_PATH / binary)
+            log(f"{binary} установлен в {INSTALL_PATH}", "ok")
+
+    except Exception as e:
+        log(f"Ошибка при установке {binary}: {e}", "error")
 
 def main():
-    log("Скачивание и установка etcd...", "info")
+    """
+    Install all missing binaries from tar.gz archives.
+    Устанавливает все отсутствующие бинарники из архивов.
+    """
+    if not os.path.exists(MISSING_FILE):
+        log(f"Файл {MISSING_FILE} не найден — установка не требуется", "ok")
+        return
 
-    os.chdir("/tmp")
-    run(["wget", ETCD_URL])
-    run(["tar", "xzf", ARCHIVE_NAME])
+    with open(MISSING_FILE, "r") as f:
+        data = json.load(f)
 
-    # Копируем бинарники
-    run(["cp", f"{EXTRACTED_FOLDER}/etcd", "/usr/local/bin/etcd"])
-    run(["cp", f"{EXTRACTED_FOLDER}/etcdctl", "/usr/local/bin/etcdctl"])
+    missing = data.get("missing", [])
+    if not missing:
+        log("Список бинарников пуст — ничего устанавливать", "ok")
+        os.remove(MISSING_FILE)
+        return
 
-    # Чистим
-    run(["rm", "-rf", ARCHIVE_NAME, EXTRACTED_FOLDER])
+    for binary in missing:
+        install_binary_from_archive(binary)
 
-    log("etcd установлен в /usr/local/bin", "ok")
+    log("Все бинарники установлены.", "ok")
+    os.remove(MISSING_FILE)
 
 if __name__ == "__main__":
     main()
