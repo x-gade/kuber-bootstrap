@@ -32,9 +32,10 @@ CONTROL_PLANE_STEPS = [
     ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
 
     ("Назначение роли control-plane ноде", "post/label_node.py"),
-
-    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
-    ("Установка Cilium","post/generate_cilium_values.py"),
+    ("Добавление бинарника и конфига cilium-cni для kubelet","post/install_cilium_cni.py")
+    ("Создание cilium-agent systemd сервиса","systemd/generate_cilium_service.py")
+#    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
+#    ("Установка Cilium","post/generate_cilium_values.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
     ("Патч kubelet для продовой среды", "kubelet/manage_kubelet_config.py --mode flags")
 

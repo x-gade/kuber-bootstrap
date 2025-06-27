@@ -8,8 +8,9 @@ MemoryAccounting=true
 {% if kubelet_memory_limit %}
 MemoryMax={{ kubelet_memory_limit }}
 {% else %}
-MemoryMax=16G
+MemoryMax=infinity
 {% endif %}
 {% if kubelet_tasks_max %}
 TasksMax={{ kubelet_tasks_max }}
 {% endif %}
+

@@ -8,7 +8,11 @@ Environment="KUBELET_EXTRA_ARGS=\
 ExecStart=
 ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS
 EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
-MemoryMax=4G
+
+# Убираем ограничение памяти — kubelet может использовать всю доступную память
+MemoryMax=infinity
+
 OOMScoreAdjust=-999
 Delegate=yes
 Slice=kubelet.slice
+

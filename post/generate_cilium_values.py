@@ -26,7 +26,7 @@ CA_PATH = "/etc/kubernetes/pki/ca.crt"
 HELM_CHART = "cilium/cilium"
 HELM_RELEASE = "cilium"
 HELM_NAMESPACE = "kube-system"
-CILIUM_VERSION = "1.17.4"
+CILIUM_VERSION = "1.17.5"
 
 IMAGES = [
     f"quay.io/cilium/cilium:v{CILIUM_VERSION}",
@@ -62,6 +62,7 @@ def render_template(ca_crt: str):
         "CLUSTER_POD_CIDR": collected_info.CLUSTER_POD_CIDR,
         "OPERATOR_REPLICAS": 2,
         "ca_crt": ca_crt,
+        "HOSTNAME": collected_info.HOSTNAME,
     }
 
     rendered = template.render(**context)

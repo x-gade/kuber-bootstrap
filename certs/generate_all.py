@@ -272,6 +272,52 @@ def generate_sa_keys(force=False):
         "expires_at": "n/a"
     }
 
+def generate_cilium_cert():
+    """
+    Generate TLS cert for cilium-agent to talk to kube-apiserver.
+    Генерирует TLS-сертификат для cilium-agent (доступ к kube-apiserver).
+    """
+    name = "cilium"
+    cn = "system:node:cilium"
+    cert_path = f"{PKI_DIR}/{name}.crt"
+    key_path = f"{PKI_DIR}/{name}.key"
+
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        not_before, not_after = get_cert_dates(cert_path)
+        if not_before and not_after:
+            cert_info[name] = {
+                "path": cert_path,
+                "created_at": not_before.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": not_after.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "signed_by": "ca"
+            }
+        return
+
+    log(f"Генерация сертификата для Cilium", "warn")
+    cnf_path = write_openssl_cnf(cn, client_cert=True)
+    csr_path = f"/tmp/{name}.csr"
+
+    run(["openssl", "genrsa", "-out", key_path, "2048"])
+    run(["openssl", "req", "-new", "-key", key_path, "-out", csr_path, "-config", cnf_path])
+    run([
+        "openssl", "x509", "-req", "-in", csr_path,
+        "-CA", CA_CERT, "-CAkey", CA_KEY, "-CAcreateserial",
+        "-out", cert_path, "-days", str(CERT_DURATION_DAYS),
+        "-extensions", "v3_req", "-extfile", cnf_path
+    ])
+
+    not_before, not_after = get_cert_dates(cert_path)
+    if validate_key_pair(cert_path, key_path):
+        cert_info[name] = {
+            "path": cert_path,
+            "created_at": not_before.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "expires_at": not_after.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "signed_by": "ca"
+        }
+
+    os.remove(csr_path)
+    os.remove(cnf_path)
+
 def create_service_file():
     """
     Create systemd unit file for renew service.
@@ -376,6 +422,7 @@ def main():
         client_cert=True
     )
 
+    generate_cilium_cert()
     generate_sa_keys(force=rotate_sa)
     generate_webhook_cert()
 
