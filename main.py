@@ -33,12 +33,12 @@ CONTROL_PLANE_STEPS = [
 
     ("Назначение роли control-plane ноде", "post/label_node.py"),
     ("Добавление бинарника и конфига cilium-cni для kubelet","post/install_cilium_cni.py")
+    ("Применение RBAC для корректной связи с kubelet"," kubelet/apply_rbacs.py")
     ("Создание cilium-agent systemd сервиса","systemd/generate_cilium_service.py")
 #    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
 #    ("Установка Cilium","post/generate_cilium_values.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
     ("Патч kubelet для продовой среды", "kubelet/manage_kubelet_config.py --mode flags")
-
 #    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
 #    ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
 

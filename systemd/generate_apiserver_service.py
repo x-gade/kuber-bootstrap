@@ -122,21 +122,6 @@ def reload_and_start():
     subprocess.run(["systemctl", "enable", "kube-apiserver"], check=True)
     log("kube-apiserver перезапущен и добавлен в автозагрузку", "ok")
 
-def apply_rbac():
-    '''
-    Применяет RBAC-манифест, если он существует.
-    Applies RBAC manifest if available.
-    '''
-    rbac_path = Path("data/apiserver-kubelet-client-admin.yaml")
-    if rbac_path.exists():
-        try:
-            subprocess.run(["kubectl", "apply", "-f", str(rbac_path)], check=True)
-            log("RBAC-права для apiserver-kubelet-client применены", "ok")
-        except subprocess.CalledProcessError as e:
-            log(f"Ошибка при применении RBAC: {e}", "error")
-    else:
-        log(f"Файл {rbac_path} не найден — пропускаем применение прав", "warn")
-
 def main():
     '''
     Точка входа. Запускает установку и настройку kube-apiserver.
@@ -153,7 +138,6 @@ def main():
     download_binary(version, path)
     render_unit_file(template_path, path)
     reload_and_start()
-    apply_rbac()
 
 if __name__ == "__main__":
     main()

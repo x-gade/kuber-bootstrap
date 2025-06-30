@@ -6,7 +6,7 @@ Wants=network-online.target
 
 [Service]
 ExecStartPre=/usr/bin/python3 /opt/kuber-bootstrap/post/verify_bpf_mount.py
-ExecStart={{ BINARY_PATH }} --config={{ CONFIG_PATH }}
+ExecStart={{ BINARY_PATH }} --config={{ CONFIG_PATH }} --disable-envoy-version-check
 
 Restart=on-failure
 RestartSec=5
