@@ -97,7 +97,9 @@ def render_config_file():
     rendered = template.render(
         HOSTNAME=collected_info.HOSTNAME,
         IP=collected_info.IP,
-        POD_CIDR=collected_info.CLUSTER_POD_CIDR
+        POD_CIDR=collected_info.CLUSTER_POD_CIDR,
+        CLUSTER_POD_CIDR=collected_info.CLUSTER_POD_CIDR,
+        CIDR=collected_info.CIDR
     )
 
     if CONFIG_OUTPUT_PATH.exists():

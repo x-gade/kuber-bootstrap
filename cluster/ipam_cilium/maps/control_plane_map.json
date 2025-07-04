@@ -1,0 +1,9 @@
+{
+    "omen179034": {
+        "role": "control-plane",
+        "name": "omen179034",
+        "globalip": "193.162.47.48",
+        "cidr": "10.244.0.0/26",
+        "clasterip": "10.244.0.0"
+    }
+}

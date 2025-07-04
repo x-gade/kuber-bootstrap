@@ -1,26 +1,30 @@
 enable-k8s: true
+k8sServiceHost: "{{ IP }}"
+k8sServicePort: "6443"
 k8s-kubeconfig-path: /etc/kubernetes/admin.conf
 k8s-client-ca-file: /etc/kubernetes/pki/ca.crt
 k8s-client-crt-file: /etc/kubernetes/pki/cilium.crt
 k8s-client-key-file: /etc/kubernetes/pki/cilium.key
 k8s-node-name: {{ HOSTNAME }}
-kube-proxy-replacement: partial
+kube-proxy-replacement: "true"
 
 ipam: cluster-pool
+cluster-pool-ipv4-cidr: {{ CLUSTER_POD_CIDR }}
+cluster-pool-ipv4-mask-size: {{ CIDR }}
+
 enable-bpf-masquerade: true
 enable-l7-proxy: false
 disable-envoy-version-check: true
 enable-ipv4: true
 enable-ipv6: false
 ipv4-node: {{ IP }}
-ipv4-range: {{ POD_CIDR }}
 ipv4-service-range: 10.96.0.0/12
 
 datapath-mode: veth
 devices:
   - eth0
 bpf-root: /sys/fs/bpf
-k8s-require-ipv4-pod-cidr: true
+k8s-require-ipv4-pod-cidr: false
 
 agent-health-port: 9879
 cluster-name: default

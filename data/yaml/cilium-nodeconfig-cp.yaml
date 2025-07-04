@@ -1,0 +1,10 @@
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: control-plane-mask-override
+spec:
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/control-plane: "true"
+  defaults:
+    ipam.pod-cidr-allocation-mask-size: "26"

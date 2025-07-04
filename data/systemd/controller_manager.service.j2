@@ -14,8 +14,9 @@ ExecStart={{ bin_path }} \
   --use-service-account-credentials=true \
   --controllers=*,bootstrapsigner,tokencleaner \
   --leader-elect=true \
-  --allocate-node-cidrs=true \
-  --cluster-cidr={{ cluster_cidr }} \
+#  --allocate-node-cidrs=true \
+#  --cluster-cidr={{ cluster_cidr }} \
+#  --node-cidr-mask-size={{ cidr_mask }} \
   --v=2
 
 Restart=always

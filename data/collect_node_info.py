@@ -33,7 +33,7 @@ def collect_info(role="control-plane"):
     role_description = "Управляющий (control-plane)" if role == "control-plane" else "Рабочий (worker)"
     log(f"Узел будет настроен как: {role_description}", "info")
 
-    cidr = "26" if role == "control-plane" else "24"
+    cidr = "24" if role == "control-plane" else "24"
 
     info = {
         "IP": get_ip(),

@@ -92,7 +92,8 @@ def generate_unit_file(bin_path):
         bin_path=bin_path,
         config_dir=CONFIG_DIR,
         cert_dir=CERT_DIR,
-        cluster_cidr=cluster_cidr
+        cluster_cidr=cluster_cidr,
+        cidr_mask=collected_info.CIDR
     )
 
     if SERVICE_PATH.exists():

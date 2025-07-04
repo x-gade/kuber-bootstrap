@@ -7,11 +7,7 @@
       "log-level": "info",
       "mtu": 1450,
       "k8sServiceHost": "{{ public_ip }}",
-      "k8sServicePort": "{{ service_port }}",
-      "ipam": {
-        "type": "cluster-pool",
-        "ipv4-pod-cidr": "{{ pod_cidr }}"
-      }
+      "k8sServicePort": "{{ service_port }}"
     }
   ]
 }

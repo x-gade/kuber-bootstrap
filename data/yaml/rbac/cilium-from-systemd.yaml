@@ -1,3 +1,28 @@
+# ClusterRole с нужными разрешениями
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cilium
+rules:
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnodes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+---
+
+# ClusterRoleBinding уже у тебя есть, оставляем без изменений
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cilium-agent-from-systemd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cilium
+subjects:
+  - kind: User
+    name: system:node:cilium
+    apiGroup: rbac.authorization.k8s.io
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

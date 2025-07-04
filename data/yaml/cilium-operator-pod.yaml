@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cilium-operator
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: cilium-operator
+    image: debian:bookworm-slim
+    command: ["/host/cilium-operator-generic"]
+    args:
+      - --config-dir=/etc/cilium
+    volumeMounts:
+    - name: operator-bin
+      mountPath: /host
+      readOnly: true
+    - name: operator-config
+      mountPath: /etc/cilium
+      readOnly: true
+  volumes:
+  - name: operator-bin
+    hostPath:
+      path: /opt/kuber-bootstrap/binares/
+      type: Directory
+  - name: operator-config
+    hostPath:
+      path: /etc/cilium
+      type: Directory
+  restartPolicy: Always
