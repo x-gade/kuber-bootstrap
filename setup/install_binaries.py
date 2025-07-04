@@ -38,11 +38,12 @@ def install_binary_from_archive(binary: str):
                 if cli_binary.exists():
                     cli_binary.chmod(0o755)
                     cli_binary.replace(INSTALL_PATH / "cilium")
-                    log(f"cilium CLI установлен в {INSTALL_PATH}/cilium", "ok")
+                    log(f"cilium CLI установлен в /usr/local/bin/cilium", "ok")
                 else:
                     log(f"cilium CLI не найден после распаковки", "error")
                 return
 
+            # Обычные бинарники — ищем одноимённый файл внутри архива
             member = next((m for m in tar.getmembers() if m.name == binary), None)
             if not member:
                 log(f"{binary} не найден внутри архива {archive_path}", "error")
