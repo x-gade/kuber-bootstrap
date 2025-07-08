@@ -15,7 +15,7 @@ CONTROL_PLANE_STEPS = [
     ("Проверка бинарников", "setup/check_binaries.py control-plane"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
     ("Установка конифгурационного файла containered", "setup/install_containerd.py"),
-    ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py"),
+    ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py -cp"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
 #    ("Включение временной сети bridge", "post/enable_temp_network.py"),
@@ -53,7 +53,11 @@ WORKER_STEPS = [
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py worker"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
-    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
+    ("Патч сети для возможности подключить ноду", "post/network_patch.py")
+    ("Генерация kubelet config", "kubelet/generate_kubelet_conf.py -w"),
+    ("Установка systemd сервиса Kubelet.services из бинарника", "systemd/generate_kubelet_service.py"),
+    ("Установка systemd сервиса kubelet.slise", "systemd/generate_kubelet_slice.py"),
+    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
     ("Установка Helm", "setup/install_helm.py"),
     ("Получение и выполнение команды join", "post/join_nodes.py"),
 ]
