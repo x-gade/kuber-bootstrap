@@ -12,9 +12,8 @@ ipam: cluster-pool
 cluster-pool-ipv4-cidr: {{ CLUSTER_POD_CIDR }}
 cluster-pool-ipv4-mask-size: {{ CIDR }}
 
+trace_payload_len: 64
 enable-bpf-masquerade: true
-enable-l7-proxy: false
-disable-envoy-version-check: true
 enable-ipv4: true
 enable-ipv6: false
 ipv4-node: {{ IP }}
@@ -29,3 +28,12 @@ k8s-require-ipv4-pod-cidr: false
 agent-health-port: 9879
 cluster-name: default
 debug: false
+
+# Проксирование через внешний Envoy
+enable-l7-proxy: true
+proxy-prometheus-port: 9964
+
+envoy:
+  socket-path: /var/run/cilium/envoy.sock
+  xds-server-port: 18000
+  access-log-path: /var/run/cilium/envoy.log

@@ -24,7 +24,6 @@ CONTROL_MAP = Path("cluster/ipam_cilium/maps/control_plane_map.json")
 def load_entry_from_cpb() -> dict:
     """
         Load node info from control_plane_map.json using current hostname
-
         Загружает данные узла из карты control_plane по текущему hostname
     """
     hostname = os.uname().nodename
@@ -38,7 +37,6 @@ def load_entry_from_cpb() -> dict:
 def load_entry_from_file(path: str) -> dict:
     """
         Load node info from external JSON file
-
         Загружает данные узла из внешнего JSON-файла
     """
     f = Path(path)
@@ -49,7 +47,6 @@ def load_entry_from_file(path: str) -> dict:
 def patch_node(name: str, cidr: str):
     """
         Patch Kubernetes node with given CIDR
-
         Пропатчить Kubernetes-ноду с указанным CIDR
     """
     patch_cmd = [
@@ -63,6 +60,30 @@ def patch_node(name: str, cidr: str):
         log(f"Нода {name} успешно пропатчена CIDR {cidr}", "ok")
     else:
         log(f"Ошибка при патче ноды {name}: {result.stderr.decode()}", "error")
+        sys.exit(1)
+
+def patch_cilium_node(name: str, cidr: str):
+    """
+    Patch CiliumNode object with podCIDRs via JSON patch.
+    """
+
+    patch = json.dumps([
+        {"op": "add", "path": "/spec/ipam", "value": {}},
+        {"op": "add", "path": "/spec/ipam/podCIDRs", "value": [cidr]}
+    ])
+
+    patch_cmd = [
+        "kubectl", "patch", "ciliumnode", name,
+        "--type=json",
+        "-p", patch
+    ]
+
+    result = subprocess.run(patch_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if result.returncode == 0:
+        log(f"CiliumNode {name} успешно пропатчен podCIDRs {cidr}", "ok")
+    else:
+        log(f"Ошибка при патче CiliumNode {name}: {result.stderr.decode()}", "error")
         sys.exit(1)
 
 if __name__ == "__main__":
@@ -81,6 +102,7 @@ if __name__ == "__main__":
             parser.error("Укажите --cpb или --json <path>")
 
         patch_node(node_info["name"], node_info["cidr"])
+        patch_cilium_node(node_info["name"], node_info["cidr"])
 
     except Exception as e:
         log(f"[PATCHER] Ошибка: {str(e)}", "error")

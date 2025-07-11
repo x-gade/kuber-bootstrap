@@ -34,7 +34,7 @@ ExecStart={{ BINARY_PATH }} \
   --etcd-keyfile={{ CERT_DIR }}/etcd/server.key \
   \
   # Admission плагины \
-  --enable-admission-plugins=NamespaceLifecycle,NodeRestriction \
+  --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,ServiceAccount,DefaultTolerationSeconds \
   --disable-admission-plugins=PodSecurity,DefaultStorageClass,PersistentVolumeLabel \
   \
   # Прочее \
