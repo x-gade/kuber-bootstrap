@@ -2,7 +2,9 @@
 
 '''
 Генерация systemd unit-файла для kubelet с использованием Jinja2-шаблона.
+Добавляет проверку и настройку containerd для корректной работы CNI.
 Generate systemd unit file for kubelet using Jinja2 template.
+Also prepares containerd config for CNI.
 '''
 
 import os
@@ -21,6 +23,7 @@ from data import collected_info
 REQUIRED_BINARIES_PATH = Path("data/required_binaries.yaml")
 SERVICE_PATH = "/lib/systemd/system/kubelet.service"
 TEMPLATE_PATH = Path("data/systemd/kubelet.service.j2")
+CONTAINERD_CONFIG_PATH = "/etc/containerd/config.toml"
 
 def load_required_version():
     '''
@@ -55,6 +58,40 @@ def download_binary(version, path):
     except Exception as e:
         log(f"Ошибка при скачивании kubelet: {e}", "error")
         sys.exit(1)
+
+def ensure_containerd_config():
+    '''
+    Проверяет наличие /etc/containerd/config.toml.
+    Если отсутствует – создаёт директорию, генерирует дефолтный конфиг и перезапускает containerd.
+    Checks /etc/containerd/config.toml. If missing – creates default config and restarts containerd.
+    '''
+    if os.path.exists(CONTAINERD_CONFIG_PATH):
+        log("Конфиг containerd уже существует – пропускаем генерацию", "ok")
+        return
+
+    log("Создание дефолтного containerd config.toml...", "info")
+
+    # Создаём папку, если её нет
+    os.makedirs("/etc/containerd", exist_ok=True)
+
+    try:
+        # Генерируем дефолтный конфиг
+        result = subprocess.run(
+            ["containerd", "config", "default"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        with open(CONTAINERD_CONFIG_PATH, "w") as f:
+            f.write(result.stdout)
+        log(f"containerd config.toml создан: {CONTAINERD_CONFIG_PATH}", "ok")
+    except subprocess.CalledProcessError as e:
+        log(f"Не удалось сгенерировать containerd config: {e.stderr}", "error")
+        sys.exit(1)
+
+    # Перезапускаем containerd с новым конфигом
+    subprocess.run(["systemctl", "restart", "containerd"], check=True)
+    log("containerd перезапущен с новым конфигом", "ok")
 
 def render_unit_file(template_path, binary_path):
     '''
@@ -101,8 +138,12 @@ def main():
     Точка входа. Запускает установку и настройку kubelet.
     Entry point. Installs and configures kubelet.
     '''
-    log("=== Настройка kubelet ===", "info")
+    log("=== Настройка containerd + kubelet ===", "info")
 
+    # Сначала убедимся, что containerd настроен для CNI
+    ensure_containerd_config()
+
+    # Потом уже устанавливаем kubelet
     version, path = load_required_version()
     download_binary(version, path)
     render_unit_file(TEMPLATE_PATH, path)

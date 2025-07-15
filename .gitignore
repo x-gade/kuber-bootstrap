@@ -4,6 +4,7 @@ data/collected_info.json
 data/collected_info.py
 data/missing_binaries.json
 data/kubeadm-config.yaml
+data/yaml/kubeadm-config.yaml
 *.bak
 
 
@@ -23,3 +24,6 @@ logs/
 .vscode/
 .idea/
 data/cilium_values.yaml
+
+# IPAM runtime maps (не храним в гите)
+cluster/ipam_cilium/maps/

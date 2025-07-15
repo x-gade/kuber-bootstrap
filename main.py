@@ -45,6 +45,8 @@ CONTROL_PLANE_STEPS = [
 #    ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
 
 #    ("Назначение роли control-plane ноде", "post/label_node.py"),
+    ("Сбор информации о ноде", "data/collect_node_info.py -cpb"),
+
 ]
 
 # Очерёдность шагов установки для worker-ноды
@@ -59,7 +61,6 @@ WORKER_STEPS = [
     ("Установка systemd сервиса kubelet.slise", "systemd/generate_kubelet_slice.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
-    ("Установка Helm", "setup/install_helm.py"),
     ("Получение и выполнение команды join", "post/join_nodes.py"),
 ]
 
