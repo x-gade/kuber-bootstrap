@@ -22,6 +22,7 @@ OUTPUT_PATH = "/var/lib/kubelet/config.yaml"
 TMP_RENDERED_PATH = "/tmp/generated-kubelet-config.yaml"
 COLLECTED_INFO_PATH = os.path.join(PROJECT_ROOT, "data/collected_info.py")
 
+
 def get_node_ip() -> str:
     """
     Get the local node IP address.
@@ -34,6 +35,7 @@ def get_node_ip() -> str:
     finally:
         s.close()
 
+
 def load_collected_info() -> dict:
     """
     Load collected_info.py as dictionary.
@@ -43,6 +45,16 @@ def load_collected_info() -> dict:
     with open(COLLECTED_INFO_PATH, "r") as f:
         exec(f.read(), collected)
     return collected
+
+
+def get_node_role() -> str:
+    """
+    Get node ROLE (worker or control-plane) from collected_info.py
+    Читает роль ноды (worker или control-plane) из collected_info.py
+    """
+    info = load_collected_info()
+    return info.get("ROLE", "worker")  # по умолчанию worker
+
 
 def render_template(collected: dict) -> str:
     """
@@ -56,6 +68,7 @@ def render_template(collected: dict) -> str:
         node_ip=get_node_ip()
     )
 
+
 def write_file(path: str, content: str):
     """
     Write string content to file, creating directory if needed.
@@ -64,6 +77,7 @@ def write_file(path: str, content: str):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
+
 
 def apply_if_changed(rendered: str) -> bool:
     """
@@ -83,6 +97,7 @@ def apply_if_changed(rendered: str) -> bool:
     write_file(OUTPUT_PATH, rendered)
     log(f"Обновлён kubelet config: {OUTPUT_PATH}", "ok")
     return True
+
 
 def update_configmap():
     """
@@ -104,6 +119,7 @@ def update_configmap():
         log(f"Ошибка при создании configmap kubelet-config: {e}", "error")
         sys.exit(1)
 
+
 def main():
     """
     Entrypoint: generate config, apply if changed, update ConfigMap.
@@ -114,13 +130,22 @@ def main():
         sys.exit(1)
 
     collected = load_collected_info()
-    rendered = render_template(collected)
+    role = collected.get("ROLE", "worker")
 
+    rendered = render_template(collected)
     changed = apply_if_changed(rendered)
+
+    # Если это воркер — не трогаем API-сервер
+    if role != "control-plane":
+        log(f"Нода {role}: пропускаем обновление ConfigMap (доступен только на control-plane)", "info")
+        return
+
+    # Только control-plane обновляет ConfigMap
     if changed:
         update_configmap()
     else:
         log("Пропуск создания configmap — файл без изменений", "info")
+
 
 if __name__ == "__main__":
     main()

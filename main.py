@@ -51,6 +51,7 @@ CONTROL_PLANE_STEPS = [
 
 # Очерёдность шагов установки для worker-ноды
 WORKER_STEPS = [
+    ("Сбор данных о контрол-плейн узле", "cluster/collecter_join_info.py"),
     ("Сбор информации о ноде", "data/collect_node_info.py worker"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py worker"),
@@ -60,8 +61,9 @@ WORKER_STEPS = [
     ("Установка systemd сервиса Kubelet.services из бинарника", "systemd/generate_kubelet_service.py"),
     ("Установка systemd сервиса kubelet.slise", "systemd/generate_kubelet_slice.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
-    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
     ("Получение и выполнение команды join", "post/join_nodes.py"),
+    ("Настройка ноды, выдача адреса в cilium сети", "cluster/intake_services/init_services.py -wb"),
+    ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
 ]
 
 def run_script(title, command):

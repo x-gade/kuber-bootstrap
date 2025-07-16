@@ -5,6 +5,7 @@ data/collected_info.py
 data/missing_binaries.json
 data/kubeadm-config.yaml
 data/yaml/kubeadm-config.yaml
+data/join_info.json
 *.bak
 
 
