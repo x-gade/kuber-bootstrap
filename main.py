@@ -18,34 +18,26 @@ CONTROL_PLANE_STEPS = [
     ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py -cp"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
-#    ("Включение временной сети bridge", "post/enable_temp_network.py"),
     ("Установка Helm", "setup/install_helm.py"),
     ("Генерация сертификатов", "certs/generate_all.py"),
     ("Генерация kubelet kubeconfig", "kubelet/generate_kubelet_kubeconfig.py"),
     ("Генерация и запуск etcd как systemd unit", "systemd/generate_etcd_service.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
-
     ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
     ("Генерация admin.kubeconfig", "kubeadm/generate_admin_kubeconfig.py"),
     ("Фазовая инициализация кластера через kubeadm", "kubeadm/run_kubeadm_phases.py"),
     ("Генерация и запуск controller-manager как systemd unit", "systemd/generate_controller_manager_service.py"),
     ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
-
     ("Назначение роли control-plane ноде", "post/label_node.py"),
-
     ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
     ("Применение RBAC для корректной связи с kubelet", " kubelet/apply_rbacs.py"),
     ("Установка bpf файлов", "post/install_bpf_files.py"),
     ("Применение CRD для cilium-agent", "post/apply_crds_cilium.py"),
     ("Создание cilium-agent systemd сервиса", "systemd/generate_cilium_service.py"),
-#    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
-#    ("Установка Cilium","post/generate_cilium_values.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
     ("Патч kubelet для продовой среды", "kubelet/manage_kubelet_config.py --mode flags"),
-#    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
-#    ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
-
-#    ("Назначение роли control-plane ноде", "post/label_node.py"),
+    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
+    ("Назначение роли control-plane ноде", "post/label_node.py"),
     ("Сбор информации о ноде", "data/collect_node_info.py -cpb"),
     ("Создание пользовтаеля cilium для воркер нод", "post/generate_cilium_sa.py")
 ]

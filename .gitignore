@@ -8,7 +8,8 @@ data/yaml/kubeadm-config.yaml
 data/join_info.json
 *.bak
 
-
+venv/
+tmp/
 # Конфиги runtime'а, которые не коммитим
 *.swp
 # временные файлы редакторов (например, nano/vim)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Generate and apply kubeconfig for admin user in different modes.
-
 Генерация и применение kubeconfig для пользователя admin в разных режимах.
 """
 

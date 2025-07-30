@@ -23,7 +23,15 @@ FILES = [
 ]
 
 def run(cmd: list, error_msg: str, exit_on_fail=True):
-    """Run a shell command and log the result."""
+    """
+    Run a shell command and log the result.
+
+    Выполняет shell-команду и логирует результат. Завершает выполнение при ошибке, если exit_on_fail=True.
+
+    :param cmd: Команда для выполнения в виде списка аргументов.
+    :param error_msg: Сообщение об ошибке для логирования.
+    :param exit_on_fail: Завершать ли выполнение при ошибке (по умолчанию True).
+    """
     try:
         subprocess.run(cmd, check=True)
         log("Успешно: " + " ".join(cmd), "ok")
@@ -33,7 +41,14 @@ def run(cmd: list, error_msg: str, exit_on_fail=True):
             sys.exit(1)
 
 def render_template(template_path: Path) -> str:
-    """Render a Jinja2 template to a temporary file and return its path."""
+    """
+    Render a Jinja2 template to a temporary file and return its path.
+
+    Рендерит Jinja2-шаблон во временный файл и возвращает путь к нему.
+
+    :param template_path: Путь к Jinja2-шаблону.
+    :return: Путь к временно созданному YAML-файлу.
+    """
     env = Environment(loader=FileSystemLoader(str(template_path.parent)))
     template = env.get_template(template_path.name)
     rendered = template.render()
@@ -42,7 +57,14 @@ def render_template(template_path: Path) -> str:
         return tmp.name
 
 def apply_yaml_pair(yaml_name: str, description: str):
-    """Apply either Jinja2 or raw YAML file."""
+    """
+    Apply either Jinja2 or raw YAML file.
+
+    Применяет Jinja2-шаблон или YAML-файл, соответствующий описанию ресурса Kubernetes.
+
+    :param yaml_name: Имя YAML-файла без расширения `.j2`.
+    :param description: Человеко-читаемое описание ресурса (например, "Deployment CoreDNS").
+    """
     base = Path("data/yaml") / yaml_name
     jinja = base.with_suffix(base.suffix + ".j2")
 
@@ -61,7 +83,11 @@ def apply_yaml_pair(yaml_name: str, description: str):
     run(["kubectl", "apply", "-f", path_to_apply], f"Ошибка применения {description}")
 
 def main():
-    """Main entrypoint: installs CoreDNS and applies configs."""
+    """
+    Main entrypoint: installs CoreDNS and applies configs.
+
+    Главная точка входа: устанавливает CoreDNS, применяет шаблоны конфигурации и перезапускает pod'ы.
+    """
     log("Экспорт KUBECONFIG", "step")
     os.environ["KUBECONFIG"] = KUBECONFIG_PATH
 

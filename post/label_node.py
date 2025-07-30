@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+Label the Kubernetes node with a role after it joins the cluster.
+Добавление метки роли Kubernetes-ноде после подключения к кластеру.
+"""
 
 import subprocess
 import sys
@@ -13,6 +17,10 @@ from utils.logger import log
 
 
 def wait_for_node(node_name: str, timeout: int = 60, interval: int = 5) -> bool:
+    """
+    Wait until the node appears in Kubernetes (up to timeout seconds).
+    Ожидание появления ноды в Kubernetes (до timeout секунд).
+    """
     log(f"Ожидание появления ноды '{node_name}' в Kubernetes (до {timeout} сек)...", "info")
     elapsed = 0
     while elapsed < timeout:
@@ -31,6 +39,10 @@ def wait_for_node(node_name: str, timeout: int = 60, interval: int = 5) -> bool:
 
 
 def get_current_labels(node_name: str) -> dict:
+    """
+    Retrieve current labels assigned to a node.
+    Получает текущие метки, назначенные ноде.
+    """
     result = subprocess.run(
         ["kubectl", "get", "node", node_name, "-o", "json"],
         capture_output=True, text=True
@@ -48,6 +60,10 @@ def get_current_labels(node_name: str) -> dict:
 
 
 def label_node(node_name: str, role: str):
+    """
+    Assign the Kubernetes role label to the specified node.
+    Назначает метку роли Kubernetes указанной ноде.
+    """
     if not wait_for_node(node_name):
         sys.exit(1)
 
@@ -74,6 +90,10 @@ def label_node(node_name: str, role: str):
 
 
 def main():
+    """
+    Entry point: assigns the collected role label to the current node.
+    Точка входа: назначает собранную роль текущей ноде.
+    """
     node_name = collected_info.HOSTNAME
     role = collected_info.ROLE
 

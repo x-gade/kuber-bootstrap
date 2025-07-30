@@ -23,7 +23,7 @@
 
 ## Быстрый старт
 
-1. Запустите `python3 main.py control-plane` для control-plane либо `python3 main.py node` для worker-ноды.
+1. Запустите `python3 main.py control-plane` для control-plane либо `python3 main.py worker` для worker-ноды.
 2. Скрипт поочерёдно выполнит все необходимые шаги, выводя ход процесса в консоль.
 
 ## Этапы установки

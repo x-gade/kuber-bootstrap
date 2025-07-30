@@ -19,6 +19,7 @@ CLUSTER_MAPS_DIR = PROJECT_ROOT / "cluster" / "ipam_cilium" / "maps"
 WORKER_MAP_FILE = CLUSTER_MAPS_DIR / "worker_map.json"
 SSH_KEY_PATH = Path.home() / ".ssh" / "ipam-client.key"
 
+# Добавляем корень проекта в sys.path для импорта логгера
 sys.path.insert(0, str(PROJECT_ROOT))
 from utils.logger import log
 
@@ -28,6 +29,10 @@ REMOTE_USER = "ipam-client"
 
 
 def load_collected_info():
+    """
+    Load local node metadata from collected_info.py
+    Загружает информацию о текущей ноде из collected_info.py
+    """
     collected_file = DATA_DIR / "collected_info.py"
     if not collected_file.exists():
         log("Файл collected_info.py не найден! Запустите collect_node_info.py", "error")
@@ -50,6 +55,10 @@ def load_collected_info():
 
 
 def load_join_info():
+    """
+    Load control-plane IP and token from join_info.json
+    Загружает IP и токен из файла join_info.json для подключения к control-plane
+    """
     join_file = DATA_DIR / "join_info.json"
     if not join_file.exists():
         log("Файл join_info.json не найден! Скопируйте его с control-plane", "error")
@@ -71,11 +80,14 @@ def load_join_info():
 
 
 def ssh_register_node(control_plane_ip, node_info, token):
+    """
+    SSH into control-plane and register the worker node
+    Подключается по SSH к control-plane и регистрирует ноду через CLI `register`
+    """
     hostname = node_info["hostname"]
     node_ip = node_info["ip"]
     role = node_info["role"]
 
-    # ВАЖНО: API на control-plane доступен только по localhost
     remote_cmd = (
         f"register "
         f"--host 127.0.0.1 "
@@ -105,7 +117,6 @@ def ssh_register_node(control_plane_ip, node_info, token):
         if stderr:
             log(f"STDERR: {stderr}", "warn")
 
-        # Ищем JSON даже если есть [INFO]/[OK]
         json_match = re.search(r"\{.*\}", stdout, re.DOTALL)
         if json_match:
             data = json.loads(json_match.group(0))
@@ -124,6 +135,10 @@ def ssh_register_node(control_plane_ip, node_info, token):
 
 
 def save_worker_map(data):
+    """
+    Save received IPAM map to worker_map.json
+    Сохраняет полученную IPAM-карту в файл worker_map.json
+    """
     CLUSTER_MAPS_DIR.mkdir(parents=True, exist_ok=True)
     with open(WORKER_MAP_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
@@ -131,6 +146,10 @@ def save_worker_map(data):
 
 
 def main():
+    """
+    Entry point: perform worker bootstrap
+    Точка входа: выполняет bootstrap текущей воркер-ноды
+    """
     log("Bootstrap воркер-ноды...", "info")
 
     node_info = load_collected_info()
@@ -140,7 +159,6 @@ def main():
 
     join_info = load_join_info()
 
-    # Автоматически удаляем старый fingerprint, чтобы SSH не спрашивал подтверждение
     subprocess.run(["ssh-keygen", "-R", f"[{join_info['control_plane_ip']}]:{SSH_PORT}"], stdout=subprocess.DEVNULL)
 
     result_json = ssh_register_node(
