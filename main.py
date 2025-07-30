@@ -25,7 +25,7 @@ CONTROL_PLANE_STEPS = [
     ("Генерация и запуск etcd как systemd unit", "systemd/generate_etcd_service.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
 
-    ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py"),
+    ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
     ("Генерация admin.kubeconfig", "kubeadm/generate_admin_kubeconfig.py"),
     ("Фазовая инициализация кластера через kubeadm", "kubeadm/run_kubeadm_phases.py"),
     ("Генерация и запуск controller-manager как systemd unit", "systemd/generate_controller_manager_service.py"),
@@ -35,6 +35,7 @@ CONTROL_PLANE_STEPS = [
 
     ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
     ("Применение RBAC для корректной связи с kubelet", " kubelet/apply_rbacs.py"),
+    ("Установка bpf файлов", "post/install_bpf_files.py"),
     ("Применение CRD для cilium-agent", "post/apply_crds_cilium.py"),
     ("Создание cilium-agent systemd сервиса", "systemd/generate_cilium_service.py"),
 #    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
@@ -46,7 +47,7 @@ CONTROL_PLANE_STEPS = [
 
 #    ("Назначение роли control-plane ноде", "post/label_node.py"),
     ("Сбор информации о ноде", "data/collect_node_info.py -cpb"),
-
+    ("Создание пользовтаеля cilium для воркер нод", "post/generate_cilium_sa.py")
 ]
 
 # Очерёдность шагов установки для worker-ноды
@@ -62,8 +63,12 @@ WORKER_STEPS = [
     ("Установка systemd сервиса kubelet.slise", "systemd/generate_kubelet_slice.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
     ("Получение и выполнение команды join", "post/join_nodes.py"),
+    ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
     ("Настройка ноды, выдача адреса в cilium сети", "cluster/intake_services/init_services.py -wb"),
     ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
+    ("Установка bpf файлов","post/install_bpf_files.py"),
+    ("Создание cilium-agent systemd сервиса", "systemd/generate_cilium_service.py"),
+    ("Установка l7 прокси ка котдельного сервиса", "systemd/generate_envoy_service.py"),
 ]
 
 def run_script(title, command):

@@ -36,7 +36,7 @@ def collect_input() -> dict:
         "CONTROL_PLANE_IP": ask("CONTROL_PLANE_IP"),
         "JOIN_TOKEN": ask("JOIN_TOKEN"),
         "DISCOVERY_HASH": ask("DISCOVERY_HASH"),
-#        "CONTROL_PLANE_SSH_PRIVATKEY": ask("CONTROL_PLANE_SSH_PRIVATKEY"),
+        "CILIUM_TOKEN": ask("CILIUM_TOKEN"),
     }
 
 
