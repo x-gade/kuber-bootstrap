@@ -11,6 +11,7 @@ control-plane:
   - kube-controller-manager
   - kube-scheduler
   - runc
+  - cni-plugins
 
 worker:
   - kubeadm
@@ -18,6 +19,7 @@ worker:
   - kubectl
   - crictl
   - runc
+  - cni-plugins
 
 kubelet:
   version: "v1.30.0"
