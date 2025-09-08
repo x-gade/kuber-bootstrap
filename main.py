@@ -49,6 +49,7 @@ WORKER_STEPS = [
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py worker"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
+    ("Установка корректного конфига для containerd", "setup/install_containerd.py"),
     ("Патч сети для возможности подключить ноду", "post/network_patch.py"),
     ("Генерация kubelet config", "kubelet/generate_kubelet_conf.py -w"),
     ("Установка systemd сервиса Kubelet.services из бинарника", "systemd/generate_kubelet_service.py"),
