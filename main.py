@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+1#!/usr/bin/env python3
 import os
 import subprocess
 import sys
@@ -58,8 +58,11 @@ WORKER_STEPS = [
     ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
     ("Настройка ноды, выдача адреса в cilium сети", "cluster/intake_services/init_services.py -wb"),
     ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
+    ("Установка admin.conf файла для работы cilium с кластером", "kubeadm/generate_admin_kubeconfig.py -w"),
     ("Установка bpf файлов","post/install_bpf_files.py"),
+    ("Настройка bpf маунтов для cilium-agent","post/verify_bpf_mount.py"),
     ("Создание cilium-agent systemd сервиса", "systemd/generate_cilium_service.py"),
+    ("ipam патч cilium-node","cluster/ipam_cilium/patcher.py --w"),
     ("Установка l7 прокси ка котдельного сервиса", "systemd/generate_envoy_service.py"),
 ]
 

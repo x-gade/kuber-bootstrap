@@ -37,6 +37,7 @@ def collect_input() -> dict:
         "JOIN_TOKEN": ask("JOIN_TOKEN"),
         "DISCOVERY_HASH": ask("DISCOVERY_HASH"),
         "CILIUM_TOKEN": ask("CILIUM_TOKEN"),
+        "IPAM_PASSWORD": ask("1IPAM_PASSWORD"),
     }
 
 
