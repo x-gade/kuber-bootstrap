@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import subprocess
 import textwrap
+from utils.logger import log
 
 CNI_CONFIG_PATH = "/etc/cni/net.d/10-bridge-temporary.conf"
 CNI_CONFIG_DIR = os.path.dirname(CNI_CONFIG_PATH)
@@ -24,50 +28,50 @@ CNI_CONFIG_CONTENT = textwrap.dedent("""
 """).strip()
 
 def write_cni_config():
-    print(f"[INFO] Проверка директории {CNI_CONFIG_DIR}...")
+    log(f"Проверка директории {CNI_CONFIG_DIR}...", "info")
     os.makedirs(CNI_CONFIG_DIR, exist_ok=True)
 
-    print(f"[INFO] Запись временного CNI-конфига в {CNI_CONFIG_PATH}...")
+    log(f"Запись временного CNI-конфига в {CNI_CONFIG_PATH}...", "info")
     with open(CNI_CONFIG_PATH, "w") as f:
         f.write(CNI_CONFIG_CONTENT)
-    print("[OK] Конфигурация записана.")
+    log("Конфигурация записана.", "ok")
 
 def restore_dns():
-    print("[INFO] Проверка и восстановление /etc/resolv.conf...")
+    log("Проверка и восстановление /etc/resolv.conf...", "info")
 
     subprocess.run(["systemctl", "restart", "systemd-resolved"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     try:
         with open("/etc/resolv.conf", "w") as f:
             f.write("nameserver 8.8.8.8\n")
-        print("[OK] DNS восстановлен через fallback.")
+        log("DNS восстановлен через fallback.", "ok")
     except Exception as e:
-        print(f"[WARN] Не удалось восстановить DNS: {e}")
+        log(f"Не удалось восстановить DNS: {e}", "warn")
 
 def restart_kubelet():
-    print("[INFO] Перезапуск kubelet...")
+    log("Перезапуск kubelet...", "info")
     result = subprocess.run(["systemctl", "restart", "kubelet"], capture_output=True, text=True)
     if result.returncode == 0:
-        print("[OK] kubelet успешно перезапущен.")
+        log("kubelet успешно перезапущен.", "ok")
     else:
-        print("[ERROR] Не удалось перезапустить kubelet:")
-        print(result.stderr)
+        log("Не удалось перезапустить kubelet:", "error")
+        log(result.stderr, "error")
 
     # Проверка состояния после перезапуска
-    print("[INFO] Проверка статуса kubelet после перезапуска...")
+    log("Проверка статуса kubelet после перезапуска...", "info")
     status = subprocess.run(["systemctl", "is-active", "kubelet"], capture_output=True, text=True)
     if status.returncode == 0 and status.stdout.strip() == "active":
-        print("[OK] kubelet работает нормально.")
+        log("kubelet работает нормально.", "ok")
     else:
-        print("[ERROR] kubelet НЕ запущен после перезапуска!")
-        print(f"[DEBUG] stdout: {status.stdout.strip()}")
-        print(f"[DEBUG] stderr: {status.stderr.strip()}")
+        log("kubelet НЕ запущен после перезапуска!", "error")
+        log(f"stdout: {status.stdout.strip()}", "info")
+        log(f"stderr: {status.stderr.strip()}", "info")
 
 def main():
     write_cni_config()
     restore_dns()
     restart_kubelet()
-    print("\n[DONE] Временная сеть создана безопасно. Теперь можно устанавливать Cilium.")
+    log("\nВременная сеть создана безопасно. Теперь можно устанавливать Cilium.", "ok")
 
 if __name__ == "__main__":
     main()

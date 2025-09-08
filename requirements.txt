@@ -1,0 +1,9 @@
+# FastAPI и сервер Uvicorn для intake сервиса
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+
+# Jinja2 для рендеринга systemd unit-шаблонов и других конфигов
+jinja2==3.1.4
+
+# PyJWT если когда-то потребуется JWT-подпись (можно оставить на будущее)
+pyjwt==2.9.0

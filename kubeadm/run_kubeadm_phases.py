@@ -1,37 +1,36 @@
-# kubeadm/run_kubeadm_phases.py
+#!/usr/bin/env python3
+"""
+Run preparation steps for kubeadm phases on control-plane.
+Выполняет подготовительные шаги для фаз kubeadm на управляющем узле.
+"""
 
 import os
 import subprocess
 import time
 import sys
-import socket
 
+# Добавление корня проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import log
 from data.collected_info import ROLE, HOSTNAME
 
-KUBELET_CONF = "/etc/kubernetes/kubelet.conf"
-KUBELET_UNIT_FILE = "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
+<<<<<<< HEAD
+KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 KUBELET_FLAGS_ENV = "/var/lib/kubelet/kubeadm-flags.env"
 
-# Получаем IP-адрес текущей машины (для node-ip)
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    finally:
-        s.close()
 
-SYSTEMD_KUBELET_CONF = f"""[Service]
-Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig={KUBELET_CONF}"
-Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock --pod-infra-container-image=registry.k8s.io/pause:3.9 --node-ip={get_ip()} --pod-cidr=10.244.0.0/16"
-ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS
-"""
+=======
+# Пути к kubeconfig и флагам kubelet
+KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
+KUBELET_FLAGS_ENV = "/var/lib/kubelet/kubeadm-flags.env"
 
+>>>>>>> origin/test
 def run(cmd, error_msg="Ошибка выполнения команды"):
+    """
+    Run a shell command and handle error logging.
+    Выполняет команду и логирует ошибку при неудаче.
+    """
     try:
         subprocess.run(cmd, check=True)
         return True
@@ -39,77 +38,81 @@ def run(cmd, error_msg="Ошибка выполнения команды"):
         log(f"{error_msg}: {e}", "error")
         return False
 
+
 def start_kubelet():
-    log("[PHASE] Запуск kubelet", "step")
+<<<<<<< HEAD
+=======
+    """
+    Remove default kubeadm flags and start kubelet using systemd configuration.
+    Удаляет старые флаги kubeadm и запускает kubelet через systemd-настройки.
+    """
+>>>>>>> origin/test
+    log("[PHASE] Конфигурация и запуск kubelet", "step")
     if os.path.exists(KUBELET_FLAGS_ENV):
         os.remove(KUBELET_FLAGS_ENV)
         log("Удалён kubeadm-flags.env — теперь только systemd управляет параметрами kubelet", "warn")
 
-    os.makedirs(os.path.dirname(KUBELET_UNIT_FILE), exist_ok=True)
-    with open(KUBELET_UNIT_FILE, "w") as f:
-        f.write(SYSTEMD_KUBELET_CONF)
-        log("Файл 10-kubeadm.conf успешно перезаписан с необходимыми параметрами", "ok")
+<<<<<<< HEAD
+    # Применяем шаблонную конфигурацию и перезапускаем
+    subprocess.run(["python3", "kubelet/manage_kubelet_config.py", "--mode", "flags"], check=True)
 
-    run(["systemctl", "daemon-reexec"])
-    run(["systemctl", "daemon-reload"])
-    run(["systemctl", "enable", "kubelet"])
-    run(["systemctl", "restart", "kubelet"])
-    log("kubelet перезапущен", "ok")
 
 def wait_for_apiserver():
-    log("Ожидание доступности kube-apiserver через kubectl...", "info")
-    for i in range(30):
+    log("Ожидание ответа от kube-apiserver (/healthz)...", "info")
+    for _ in range(30):
         try:
-            subprocess.check_output(["kubectl", "get", "--raw", "/healthz"])
-            log("kube-apiserver доступен", "ok")
-            return True
+            out = subprocess.check_output(["curl", "-sf", "--max-time", "2", "https://127.0.0.1:6443/healthz", "--insecure"])
+=======
+    # Генерация конфигурации флагов для systemd и запуск
+    subprocess.run(["python3", "kubelet/manage_kubelet_config.py", "--mode", "flags"], check=True)
+
+def wait_for_apiserver():
+    """
+    Wait for kube-apiserver to respond on /healthz endpoint.
+    Ожидает доступности kube-apiserver по адресу /healthz.
+    """
+    log("Ожидание ответа от kube-apiserver (/healthz)...", "info")
+    for _ in range(30):  # максимум 90 секунд
+        try:
+            out = subprocess.check_output([
+                "curl", "-sf", "--max-time", "2",
+                "https://127.0.0.1:6443/healthz", "--insecure"
+            ])
+>>>>>>> origin/test
+            if b"ok" in out:
+                log("kube-apiserver доступен", "ok")
+                return True
         except subprocess.CalledProcessError:
             pass
         time.sleep(3)
     log("kube-apiserver не ответил за 90 секунд", "error")
     return False
 
-def create_cluster_rolebinding():
-    log("[PHASE] Назначение прав cluster-admin пользователю kubernetes-admin", "step")
-    return run([
-        "kubectl", "create", "clusterrolebinding", "root-cluster-admin-binding",
-        "--clusterrole=cluster-admin",
-        "--user=kubernetes-admin"
-    ], "Не удалось создать clusterrolebinding")
+<<<<<<< HEAD
 
-# Отключено временно до установки CNI, иначе нода не появится
-def wait_for_node_registration():
-    log("Ожидание регистрации текущей ноды в Kubernetes...", "info")
-    for i in range(30):
-        try:
-            out = subprocess.check_output(["kubectl", "get", "node", HOSTNAME])
-            if HOSTNAME in out.decode():
-                log(f"Нода {HOSTNAME} успешно зарегистрирована", "ok")
-                return True
-        except subprocess.CalledProcessError:
-            pass
-        time.sleep(3)
-    log(f"Нода {HOSTNAME} не зарегистрирована за 90 секунд", "error")
-    return False
-
+=======
+>>>>>>> origin/test
 def main():
+    """
+    Entry point: prepare control-plane for further kubeadm phases.
+    Точка входа: подготавливает управляющий узел к дальнейшим фазам kubeadm.
+    """
     if ROLE != "control-plane":
         log("Пропуск инициализации: текущая нода не является control-plane", "warn")
         return
+
+    os.environ.setdefault("KUBECONFIG", KUBECONFIG_PATH)
 
     start_kubelet()
 
     if not wait_for_apiserver():
         sys.exit(1)
 
-    if not create_cluster_rolebinding():
-        sys.exit(1)
+    log("kubelet и apiserver запущены. Инициализация продолжится после установки CNI", "ok")
+<<<<<<< HEAD
 
-    log("⚠️ Регистрация ноды будет происходить после установки CNI", "warn")
-    # if not wait_for_node_registration():
-    #     sys.exit(1)
-
-    log("Ручная инициализация control-plane завершена успешно", "ok")
+=======
+>>>>>>> origin/test
 
 if __name__ == "__main__":
     main()

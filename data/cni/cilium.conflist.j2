@@ -1,0 +1,13 @@
+{
+  "cniVersion": "0.3.1",
+  "name": "cilium",
+  "plugins": [
+    {
+      "type": "cilium-cni",
+      "log-level": "info",
+      "mtu": 1450,
+      "k8sServiceHost": "{{ public_ip }}",
+      "k8sServicePort": "{{ service_port }}"
+    }
+  ]
+}

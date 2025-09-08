@@ -1,0 +1,17 @@
+[Unit]
+Description=Envoy Proxy Service
+Documentation=https://www.envoyproxy.io
+After=network.target
+Before=cilium.service
+Wants=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/envoy -c /etc/envoy/envoy.yaml --log-level info
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

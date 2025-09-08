@@ -1,0 +1,24 @@
+[Service]
+<<<<<<< HEAD
+Environment="KUBELET_EXTRA_ARGS=--container-runtime-endpoint=unix:///run/containerd/containerd.sock \
+--node-ip={{ node_ip }} \
+--fail-swap-on=false \
+--cgroup-driver=systemd \
+--pod-infra-container-image=k8s.gcr.io/pause:3.9 \
+--register-node=false \
+--cluster-dns=10.96.0.10 \
+--cluster-domain=cluster.local \
+--config=/var/lib/kubelet/config.yaml"
+ExecStart=
+ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS
+EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+=======
+Environment="KUBELET_EXTRA_ARGS=--container-runtime-endpoint=unix:///run/containerd/containerd.sock"
+Environment="KUBELET_KUBEADM_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml"
+ExecStart=
+ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS $KUBELET_KUBEADM_ARGS
+>>>>>>> origin/test
+MemoryMax=4G
+OOMScoreAdjust=-999
+Delegate=yes
+Slice=kubelet.slice

@@ -1,5 +1,10 @@
 # systemd/generate_apiserver_service.py
 
+'''
+Генерация systemd unit-файла для kube-apiserver с использованием Jinja2-шаблона.
+Generate systemd unit file for kube-apiserver using Jinja2 template.
+'''
+
 import os
 import sys
 import subprocess
@@ -7,6 +12,7 @@ import yaml
 import urllib.request
 import shutil
 from pathlib import Path
+from jinja2 import Template
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -18,25 +24,34 @@ SERVICE_PATH = "/etc/systemd/system/kube-apiserver.service"
 MANIFESTS_DIR = "/etc/kubernetes/manifests"
 CERT_DIR = "/etc/kubernetes/pki"
 
-
-def get_config_path(mode: str) -> Path:
+def get_template_path(mode: str) -> Path:
+    '''
+    Получает путь до Jinja2-шаблона unit-файла по режиму (dev/prod).
+    Returns Jinja2 template path for systemd unit based on mode.
+    '''
     if mode == "dev":
-        return Path("data/apiserver_config_dev")
+        return Path("data/systemd/apiserver_dev.service.j2")
     elif mode == "prod":
-        return Path("data/apiserver_config_prod")
+        return Path("data/systemd/apiserver_prod.service.j2")
     else:
         log(f"Неизвестный режим: {mode}", "error")
         sys.exit(1)
 
-
 def remove_pod_manifest():
+    '''
+    Удаляет старый pod-манифест apiserver, если он существует.
+    Removes old pod manifest for apiserver if it exists.
+    '''
     manifest_path = os.path.join(MANIFESTS_DIR, "kube-apiserver.yaml")
     if os.path.exists(manifest_path):
         os.remove(manifest_path)
         log(f"Удалён pod-манифест: {manifest_path}", "warn")
 
-
 def load_required_version():
+    '''
+    Загружает версию и путь бинарника kube-apiserver из YAML-файла.
+    Loads kube-apiserver version and binary path from YAML.
+    '''
     with open(REQUIRED_BINARIES_PATH, "r") as f:
         binaries = yaml.safe_load(f)
     if "kube-apiserver" not in binaries:
@@ -46,8 +61,11 @@ def load_required_version():
     path = binaries["kube-apiserver"]["path"]
     return version, path
 
-
 def download_binary(version, path):
+    '''
+    Загружает бинарник kube-apiserver, если он ещё не установлен.
+    Downloads kube-apiserver binary if not present.
+    '''
     if os.path.exists(path):
         log(f"Бинарник уже установлен: {path}", "ok")
         return
@@ -62,32 +80,19 @@ def download_binary(version, path):
         log(f"Ошибка при скачивании kube-apiserver: {e}", "error")
         sys.exit(1)
 
+def render_unit_file(template_path, binary_path):
+    '''
+    Рендерит unit-файл systemd для kube-apiserver из Jinja2-шаблона.
+    Renders kube-apiserver systemd unit from Jinja2 template.
+    '''
+    with open(template_path, "r") as f:
+        template = Template(f.read())
 
-def load_flag_lines(config_path: Path):
-    if not config_path.exists():
-        log(f"Файл конфигурации параметров не найден: {config_path}", "error")
-        sys.exit(1)
-
-    with open(config_path, "r") as f:
-        lines = f.readlines()
-
-    flags = []
-    for line in lines:
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        line = line.replace("{IP}", collected_info.IP)
-        line = line.replace("{CERT_DIR}", CERT_DIR)
-        flags.append(line)
-    return " \\\n  ".join(flags)
-
-
-def generate_unit_file(binary_path, config_path):
-    flags = load_flag_lines(config_path)
-    with open("data/kube-apiserver.service.template", "r") as f:
-        template = f.read()
-
-    unit_content = template.replace("{BINARY_PATH}", binary_path).replace("{FLAGS}", flags)
+    unit_content = template.render(
+        BINARY_PATH=binary_path,
+        CERT_DIR=CERT_DIR,
+        IP=collected_info.IP
+    )
 
     changed = True
     if os.path.exists(SERVICE_PATH):
@@ -106,28 +111,33 @@ def generate_unit_file(binary_path, config_path):
     if changed:
         log(f"Unit-файл обновлён: {SERVICE_PATH}", "ok")
 
-
 def reload_and_start():
+    '''
+    Перезапускает systemd и включает kube-apiserver.
+    Reloads systemd and starts kube-apiserver.
+    '''
     subprocess.run(["systemctl", "daemon-reexec"], check=True)
     subprocess.run(["systemctl", "daemon-reload"], check=True)
     subprocess.run(["systemctl", "restart", "kube-apiserver"], check=True)
     subprocess.run(["systemctl", "enable", "kube-apiserver"], check=True)
     log("kube-apiserver перезапущен и добавлен в автозагрузку", "ok")
 
-
 def main():
+    '''
+    Точка входа. Запускает установку и настройку kube-apiserver.
+    Entry point. Installs and configures kube-apiserver.
+    '''
     mode = "prod"
     if len(sys.argv) > 1 and sys.argv[1] == "--mode=dev":
         mode = "dev"
     log(f"=== Настройка kube-apiserver в режиме {mode.upper()} ===", "info")
 
-    config_path = get_config_path(mode)
+    template_path = get_template_path(mode)
     remove_pod_manifest()
     version, path = load_required_version()
     download_binary(version, path)
-    generate_unit_file(path, config_path)
+    render_unit_file(template_path, path)
     reload_and_start()
-
 
 if __name__ == "__main__":
     main()

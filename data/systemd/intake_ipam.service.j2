@@ -1,0 +1,26 @@
+[Unit]
+Description=Kubernetes Intake + IPAM Control Service
+After=network.target
+
+[Service]
+Type=simple
+
+# Важно: явно задаём KUBECONFIG для kubectl
+Environment=KUBECONFIG=/etc/kubernetes/admin.conf
+
+ExecStart=/usr/bin/python3 /opt/kuber-bootstrap/cluster/intake_services/cps_service.py
+Restart=always
+RestartSec=5
+
+# Запускаем от root (kubectl требует root для доступа к admin.conf)
+User=root
+
+# Директория проекта
+WorkingDirectory=/opt/kuber-bootstrap
+
+# Немного улучшений для логирования
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

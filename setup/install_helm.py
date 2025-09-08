@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Install Helm package manager for Kubernetes.
+Устанавливает Helm — менеджер пакетов для Kubernetes.
+"""
+
 import os
 import sys
 import subprocess
@@ -10,14 +15,28 @@ sys.path.append(PROJECT_ROOT)
 
 from utils.logger import log
 
+
 def run(cmd: list, cwd=None):
+    """
+    Run a shell command and return success status.
+    Выполняет shell-команду и возвращает статус успешности.
+
+    :param cmd: Команда в виде списка аргументов
+    :param cwd: Каталог, в котором выполняется команда (опционально)
+    :return: True если команда выполнена успешно, иначе False
+    """
     try:
         subprocess.run(cmd, check=True, cwd=cwd)
         return True
     except subprocess.CalledProcessError:
         return False
 
+
 def install_helm():
+    """
+    Install Helm via official APT repository if not already installed.
+    Устанавливает Helm через официальный репозиторий APT, если он ещё не установлен.
+    """
     if shutil.which("helm"):
         log("Helm уже установлен. Пропускаем.", "ok")
         return
@@ -43,6 +62,11 @@ def install_helm():
         log("Helm не обнаружен после установки. Проверь вручную.", "error")
         sys.exit(1)
 
+
 if __name__ == "__main__":
+    """
+    Entrypoint: install Helm if missing.
+    Точка входа: установить Helm при отсутствии.
+    """
     log("Установка Helm...", "start")
     install_helm()

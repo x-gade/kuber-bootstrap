@@ -1,0 +1,123 @@
+k8sServiceHost: {{ IP }}
+k8sServicePort: 6443
+
+hostNetworking: true
+
+k8s:
+  nodeName: {{ HOSTNAME }}
+  client:
+    tls:
+      caFile: /etc/kubernetes/pki/ca.crt
+cni:
+  install: true
+  customConf: false
+  binPath: /opt/cni/bin
+  confPath: /etc/cni/net.d
+  chainingMode: ""
+
+ipam:
+  mode: kubernetes
+
+routingMode: native
+ipv4NativeRoutingCIDR: {{ CLUSTER_POD_CIDR }}
+ipv4:
+  enabled: true
+ipv6:
+  enabled: false
+
+kubeProxyReplacement: false
+socketLB:
+  enabled: true
+hostServices:
+  enabled: true
+externalIPs:
+  enabled: true
+nodePort:
+  enabled: true
+  enableHealthCheck: false
+hostPort:
+  enabled: true
+
+enableIPv4Masquerade: true
+
+hubble:
+  enabled: false
+
+nodeinit:
+  enabled: false
+
+agent: true
+
+livenessProbe:
+  enabled: false
+readinessProbe:
+  enabled: false
+startupProbe:
+  enabled: false
+
+operator:
+  enabled: true
+  replicas: 1
+  rollOutPods: true
+
+l7Proxy: false
+
+enablePrometheusMetrics: false
+
+endpointRoutes:
+  enabled: false
+
+meshAuth:
+  enabled: false
+
+clustermesh:
+  apiserver:
+    service:
+      externalTrafficPolicy: Cluster
+      internalTrafficPolicy: Cluster
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 1000m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+autoDirectNodeRoutes: false
+
+bpf:
+  autoScale: false
+  datapathMode: veth
+  distributedLRU:
+    enabled: true
+  policyMapMax: 16384
+  clockProbe: true
+  ctGlobalMax:
+    tcp: 131072
+    any: 65536
+  natMaxEntries: 65536
+
+identityLabels:
+  - "io.kubernetes.pod.namespace"
+  - "app"
+
+imagePullSecrets: []
+
+containerSecurityContext:
+  privileged: true
+  capabilities:
+    add:
+      - IPC_LOCK
+
+extraVolumes:
+  - name: custom-ca
+    hostPath:
+      path: /etc/kubernetes/pki
+      type: DirectoryOrCreate
+
+extraVolumeMounts:
+  - mountPath: /etc/kubernetes/pki/ca.crt
+    name: custom-ca
+    readOnly: true
+    subPath: ca.crt

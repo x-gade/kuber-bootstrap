@@ -1,0 +1,18 @@
+[Service]
+Environment="KUBELET_EXTRA_ARGS=\
+--node-ip={{ node_ip }} \
+--kubeconfig=/etc/kubernetes/kubelet.conf \
+--register-node=true \
+--container-runtime-endpoint=unix:///run/containerd/containerd.sock \
+--config=/var/lib/kubelet/config.yaml"
+ExecStart=
+ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS
+EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+
+# Убираем ограничение памяти — kubelet может использовать всю доступную память
+MemoryMax=infinity
+
+OOMScoreAdjust=-999
+Delegate=yes
+Slice=kubelet.slice
+

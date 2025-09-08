@@ -1,0 +1,11 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+bootstrapTokens:
+  - token: "{{ TOKEN }}"
+    description: "Token for joining nodes"
+    ttl: "24h"
+    usages:
+      - signing
+      - authentication
+    groups:
+      - system:bootstrappers:kubeadm:default-node-token

@@ -4,6 +4,8 @@ import os
 import subprocess
 import sys
 
+from utils.logger import log
+
 KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 CA_CERT = "/etc/kubernetes/pki/ca.crt"
 ADMIN_CERT = "/etc/kubernetes/pki/admin.crt"
@@ -14,15 +16,6 @@ def run(cmd, capture_output=True):
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         return e.stderr.strip() if capture_output else None
-
-def log(msg, level="info"):
-    prefix = {
-        "ok": "[OK]",
-        "warn": "[WARN]",
-        "error": "[ERROR]",
-        "info": "[INFO] ℹ️"
-    }.get(level.lower(), "[INFO]")
-    print(f"{prefix} {msg}")
 
 def verify_cert_chain():
     log("Проверка: admin.crt доверен ca.crt...", "info")
@@ -48,7 +41,7 @@ def test_kubectl():
     output = run("kubectl get nodes", capture_output=True)
     if "NAME" in output:
         log("kubectl работает корректно!", "ok")
-        print(output)
+        log(output, "info")
     else:
         log(f"kubectl не может подключиться: {output}", "error")
 

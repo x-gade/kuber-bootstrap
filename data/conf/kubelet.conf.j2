@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+  - name: default-cluster
+    cluster:
+      certificate-authority: pki/ca.crt
+      server: https://{{ IP }}:6443
+users:
+  - name: default-node
+    user:
+      client-certificate: pki/kubelet-client.crt
+      client-key: pki/kubelet-client.key
+contexts:
+  - name: default
+    context:
+      cluster: default-cluster
+      user: default-node
+current-context: default

@@ -1,0 +1,29 @@
+# data/yaml/apiserver-kubelet-client-extra.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apiserver-kubelet-client-extra
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/stats
+      - nodes/log
+      - pods
+      - pods/log
+      - pods/exec
+    verbs: ["get", "list", "watch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apiserver-kubelet-client-extra
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apiserver-kubelet-client-extra
+subjects:
+  - kind: User
+    name: apiserver-kubelet-client
+    apiGroup: rbac.authorization.k8s.io

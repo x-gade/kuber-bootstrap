@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubeadm-config-reader
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames:
+      - kubeadm-config
+      - kubelet-config
+      - kube-proxy
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeadm:kubeadm-config
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeadm-config-reader
+subjects:
+  - kind: Group
+    name: system:bootstrappers:kubeadm:default-node-token
+    apiGroup: rbac.authorization.k8s.io

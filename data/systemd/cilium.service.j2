@@ -1,0 +1,36 @@
+[Unit]
+Description=Cilium Daemon
+Documentation=https://docs.cilium.io/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStartPre=/usr/bin/python3 /opt/kuber-bootstrap/post/verify_bpf_mount.py
+ExecStart={{ BINARY_PATH }} --config=/etc/cilium/cilium.yaml
+
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=1048576
+
+User=root
+Environment=HOME=/var/lib/cilium
+<<<<<<< HEAD
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_BPF CAP_SYS_ADMIN
+=======
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_BPF CAP_SYS_ADMIN CAP_PERFMON
+>>>>>>> origin/test
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_BPF CAP_SYS_ADMIN
+NoNewPrivileges=false
+
+# ProtectSystem не нужен — он ломает доступ к bpffs
+# ProtectHome=true
+# PrivateTmp=true
+# ProtectKernelModules=true
+# ProtectControlGroups=true
+# ProtectKernelTunables=true
+
+ReadOnlyPaths=/etc
+ReadWritePaths={{ CONFIG_DIR }} /sys/fs/bpf /var/lib/cilium
+
+[Install]
+WantedBy=multi-user.target

@@ -3,15 +3,42 @@ control-plane:
   - kubelet
   - kubectl
   - etcd
-  - containerd
+  - etcdctl
+  - cilium
+  - crictl
+  - helm
+  - kube-apiserver
+  - kube-controller-manager
+  - kube-scheduler
+  - runc
+<<<<<<< HEAD
+=======
+  - cni-plugins
+>>>>>>> origin/test
 
-node:
+worker:
   - kubeadm
   - kubelet
   - kubectl
-  - containerd
+  - crictl
+  - runc
+<<<<<<< HEAD
+=======
+  - cni-plugins
 
+kubelet:
+  version: "v1.30.0"
+  path: "/usr/bin/kubelet"
+>>>>>>> origin/test
 
 kube-apiserver:
   version: "v1.30.0"
   path: "/usr/local/bin/kube-apiserver"
+
+kube-controller-manager:
+  version: "v1.30.0"
+  path: "/usr/local/bin/kube-controller-manager"
+
+kube-scheduler:
+  version: "v1.30.0"
+  path: "/usr/local/bin/kube-scheduler"

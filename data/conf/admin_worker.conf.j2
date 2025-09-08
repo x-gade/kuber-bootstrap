@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - name: kubernetes
+    cluster:
+      server: https://{{ CONTROL_PLANE_IP }}:6443
+      insecure-skip-tls-verify: true   # можно оставить true, чтобы не тянуть ca.crt
+
+users:
+  - name: cilium
+    user:
+      token: {{ CILIUM_TOKEN }}
+
+contexts:
+  - name: cilium@kubernetes
+    context:
+      cluster: kubernetes
+      user: cilium
+
+current-context: cilium@kubernetes

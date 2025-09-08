@@ -1,0 +1,24 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ IP }}
+  bindPort: 6443
+
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: stable
+controlPlaneEndpoint: "{{ IP }}:6443"
+apiServer:
+  timeoutForControlPlane: 4m0s
+  certSANs:
+    - {{ IP }}
+networking:
+  podSubnet: "{{ CLUSTER_POD_CIDR }}"
+etcd:
+  external:
+    endpoints:
+      - https://{{ IP }}:2379
+    caFile: /etc/kubernetes/pki/etcd/ca.crt
+    certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
+    keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key

@@ -1,16 +1,29 @@
+#!/usr/bin/env python3
+"""
+Renew expiring Kubernetes TLS certificates via generate_all.py functions.
+Обновляет истекающие TLS-сертификаты Kubernetes через функции generate_all.py.
+"""
+
 import os
 import sys
+import json
+import fcntl
+import subprocess
+from datetime import datetime
 
-# Добавляем корень проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import json
-import subprocess
-import fcntl
-from datetime import datetime, timedelta
 from utils.logger import log
 from data.collected_info import IP, HOSTNAME
 
+from certs.generate_all import (
+    generate_cert,
+    generate_cilium_cert,
+    generate_webhook_cert,
+    generate_sa_keys
+)
+
+# === Константы ===
 CERT_INFO_FILE = "certs/cert_info.json"
 RENEW_THRESHOLD_DAYS = 30
 CERT_DURATION_DAYS = 365
@@ -19,6 +32,10 @@ CA_KEY = "/etc/kubernetes/pki/ca.key"
 LOCK_PATH = "/var/lock/renew_certs.lock"
 
 def acquire_lock():
+    """
+    Prevent concurrent execution via file lock.
+    Предотвращает параллельный запуск через файловую блокировку.
+    """
     lockfile = open(LOCK_PATH, 'w')
     try:
         fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -27,31 +44,11 @@ def acquire_lock():
         log("🔒 Другой процесс уже выполняет ротацию сертификатов", "warn")
         sys.exit(0)
 
-def write_openssl_cnf(cn):
-    path = f"/tmp/openssl_{cn}.cnf"
-    with open(path, "w") as f:
-        f.write(f"""
-[ req ]
-prompt = no
-distinguished_name = dn
-x509_extensions = v3_req
-req_extensions = v3_req
-
-[ dn ]
-CN = {cn}
-
-[ v3_req ]
-subjectAltName = @alt_names
-
-[ alt_names ]
-DNS.1 = {cn}
-DNS.2 = {HOSTNAME}
-IP.1 = 127.0.0.1
-IP.2 = {IP}
-""")
-    return path
-
 def get_cert_dates(path):
+    """
+    Return notBefore and notAfter dates of a certificate.
+    Возвращает даты начала и окончания действия сертификата.
+    """
     try:
         out = subprocess.check_output(["openssl", "x509", "-in", path, "-noout", "-dates"]).decode()
         lines = dict(line.split("=", 1) for line in out.strip().splitlines())
@@ -63,39 +60,79 @@ def get_cert_dates(path):
         return None, None
 
 def validate_key_pair(cert_path, key_path):
+    """
+    Ensure certificate and key form a valid pair.
+    Проверяет, соответствуют ли сертификат и ключ.
+    """
     try:
         cert_mod = subprocess.check_output(["openssl", "x509", "-in", cert_path, "-noout", "-modulus"]).strip()
         key_mod = subprocess.check_output(["openssl", "rsa", "-in", key_path, "-noout", "-modulus"]).strip()
         return cert_mod == key_mod
     except Exception as e:
-        log(f"⚠️ Проверка пары ключ+сертификат не удалась: {e}", "warn")
+        log(f"Проверка пары ключ+сертификат не удалась: {e}", "warn")
         return False
 
 def renew_certificate(name, path):
-    log(f"🔄 Обновление сертификата: {name}", "warn")
+<<<<<<< HEAD
+    log(f"Обновление сертификата: {name}", "warn")
     try:
         key_path = path.replace(".crt", ".key")
         csr_path = f"/tmp/{name}.csr"
         cnf_path = write_openssl_cnf(name)
+=======
+    """
+    Renew a certificate using corresponding generator.
+    Обновляет сертификат через соответствующую функцию генерации.
+    """
+    log(f"Обновление сертификата: {name}", "warn")
+>>>>>>> origin/test
 
-        subprocess.run(["openssl", "genrsa", "-out", key_path, "2048"], check=True)
-        subprocess.run(["openssl", "req", "-new", "-key", key_path, "-out", csr_path, "-config", cnf_path], check=True)
-        subprocess.run([
-            "openssl", "x509", "-req", "-in", csr_path,
-            "-CA", CA_CERT, "-CAkey", CA_KEY,
-            "-CAcreateserial",
-            "-out", path, "-days", str(CERT_DURATION_DAYS),
-            "-extensions", "v3_req", "-extfile", cnf_path
-        ], check=True)
+    key_path = path.replace(".crt", ".key")
 
-        os.remove(csr_path)
-        os.remove(cnf_path)
+    if name == "cilium":
+        generate_cilium_cert()
         return True
+<<<<<<< HEAD
     except subprocess.CalledProcessError as e:
-        log(f"❌ Ошибка обновления {name}: {e}", "error")
+        log(f"Ошибка обновления {name}: {e}", "error")
         return False
+=======
+    elif name == "sa":
+        generate_sa_keys(force=True)
+        return True
+    elif name == "cilium-webhook":
+        generate_webhook_cert()
+        return True
+    elif name == "kubelet-client":
+        return generate_cert(
+            name=name,
+            cn=f"system:node:{HOSTNAME}",
+            path=path,
+            key_path=key_path,
+            client_cert=True
+        )
+    elif name == "admin":
+        return generate_cert(
+            name=name,
+            cn="kubernetes-admin",
+            path=path,
+            key_path=key_path,
+            client_cert=True
+        )
+    else:
+        return generate_cert(
+            name=name,
+            cn=name,
+            path=path,
+            key_path=key_path
+        )
+>>>>>>> origin/test
 
 def restart_service_if_needed(name):
+    """
+    Restart services affected by renewed certs.
+    Перезапускает сервисы, использующие TLS-сертификаты.
+    """
     if "etcd" in name:
         os.system("systemctl restart etcd")
         log("Перезапущен etcd", "ok")
@@ -104,6 +141,10 @@ def restart_service_if_needed(name):
         log("Перезапущен kube-apiserver", "ok")
 
 def check_and_renew():
+    """
+    Main logic for checking and renewing certificates.
+    Основная логика проверки и ротации сертификатов.
+    """
     if not os.path.exists(CERT_INFO_FILE):
         log(f"Файл не найден: {CERT_INFO_FILE}", "error")
         return
@@ -114,13 +155,12 @@ def check_and_renew():
     now = datetime.utcnow()
     changed = False
 
-    # Получение срока действия CA
+    # === Проверка CA ===
     ca_not_before, ca_not_after = get_cert_dates(CA_CERT)
     if not ca_not_after:
-        log("⛔️ CA невалиден, отмена ротации", "error")
+        log("CA невалиден, отмена ротации", "error")
         return
 
-    # Получаем срок действия CA из cert_info.json (если есть)
     cert_ca_date_str = certs.get("ca", {}).get("expires_at")
     if cert_ca_date_str:
         try:
@@ -128,11 +168,11 @@ def check_and_renew():
         except:
             cert_ca_date = ca_not_after
     else:
-        log("⚠️ CA не найден в cert_info.json, читаю с диска", "warn")
+        log("CA не найден в cert_info.json, читаю с диска", "warn")
         cert_ca_date = ca_not_after
 
     if (ca_not_after - now).days < RENEW_THRESHOLD_DAYS:
-        log("⚠️ CA скоро истекает, желательно пересоздать и перегенерировать всё", "warn")
+        log("CA скоро истекает, желательно пересоздать и перегенерировать всё", "warn")
 
     for name, cert in certs.items():
         if cert.get("expires_at") == "n/a":
@@ -147,16 +187,15 @@ def check_and_renew():
             _, expires = get_cert_dates(cert["path"])
             days_left = (expires - now).days if expires else -1
 
-        # Проверка подписи
         if cert.get("signed_by") == "ca" and cert_ca_date != ca_not_after:
-            log(f"📛 {name}: подписан старым CA, требует регенерации", "warn")
+            log(f"{name}: подписан старым CA, требует регенерации", "warn")
             needs_renewal = True
 
         if days_left <= 0:
-            log(f"⛔️ {name}: срок действия истёк!", "error")
+            log(f"{name}: срок действия истёк!", "error")
             needs_renewal = True
         elif days_left <= RENEW_THRESHOLD_DAYS:
-            log(f"⚠️ {name}: истекает через {days_left} дней", "warn")
+            log(f"{name}: истекает через {days_left} дней", "warn")
             needs_renewal = True
         else:
             log(f"{name}: истекает через {days_left} дней", "info")
@@ -172,21 +211,28 @@ def check_and_renew():
                 cert["expires_at"] = new_to.strftime("%Y-%m-%dT%H:%M:%SZ")
                 cert["signed_by"] = "ca"
                 restart_service_if_needed(name)
-                log(f"✅ Обновлён: {name}", "ok")
+                log(f"Обновлён: {name}", "ok")
                 changed = True
             else:
-                log(f"⚠️ Обновлён, но невалиден или не совпадает с ключом: {name}", "warn")
+                log(f"Обновлён, но невалиден или не совпадает с ключом: {name}", "warn")
 
     if changed:
         os.rename(CERT_INFO_FILE, CERT_INFO_FILE + ".bak")
         with open(CERT_INFO_FILE, "w") as f:
             json.dump(certs, f, indent=2)
-        log("📘 cert_info.json обновлён", "ok")
+        log("cert_info.json обновлён", "ok")
     else:
-        log("🔄 Все сертификаты в порядке, обновление не требуется", "ok")
+        log("Все сертификаты в порядке, обновление не требуется", "ok")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/test
 
 if __name__ == "__main__":
+    """
+    Entry point for cert renewal script.
+    Точка входа скрипта проверки и обновления TLS-сертификатов.
+    """
     log("=== Проверка и обновление сертификатов ===", "info")
     lock = acquire_lock()
     check_and_renew()

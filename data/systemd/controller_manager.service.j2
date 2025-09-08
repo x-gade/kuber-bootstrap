@@ -1,0 +1,36 @@
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://kubernetes.io/docs/concepts/architecture/controller/
+After=network.target kube-apiserver.service
+Requires=kube-apiserver.service
+
+[Service]
+ExecStart={{ bin_path }} \
+  --kubeconfig={{ config_dir }}/controller-manager.conf \
+  --root-ca-file={{ cert_dir }}/ca.crt \
+  --service-account-private-key-file={{ cert_dir }}/sa.key \
+  --cluster-signing-cert-file={{ cert_dir }}/ca.crt \
+  --cluster-signing-key-file={{ cert_dir }}/ca.key \
+  --use-service-account-credentials=true \
+  --controllers=*,bootstrapsigner,tokencleaner \
+  --leader-elect=true \
+#  --allocate-node-cidrs=true \
+#  --cluster-cidr={{ cluster_cidr }} \
+#  --node-cidr-mask-size={{ cidr_mask }} \
+  --v=2
+
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+User=root
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadOnlyPaths=/etc
+ReadWritePaths={{ config_dir }}
+
+[Install]
+WantedBy=multi-user.target
