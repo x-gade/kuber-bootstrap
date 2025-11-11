@@ -141,3 +141,6 @@ python -m py_compile $(git ls-files '*.py')
 
 * `install.sh` — единая точка входа для установки: готовит APT‑пакеты, создаёт venv, ставит Python‑зависимости и запускает `main.py` в нужном режиме (`-w`, `-cp`, `-cpb`). Идемпотентен и безопасен к повторным запускам.
 * `uninstall.sh` — единая точка выхода: инициирует кластерное удаление узла через `cluster/intake_services/init_services.py` (`-wd`/`-cpd`) и затем выполняет локовую очистку через `utils/cleanup_kuber.sh`. Возвращает информативные коды ошибок.
+
+## License
+Licensed under the [MIT License](./LICENSE).
