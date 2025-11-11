@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-<<<<<<< HEAD
-=======
 """
 Manage systemd kubelet config by applying Jinja2 templates.
 Генерация systemd-конфига kubelet с помощью шаблонов Jinja2.
 """
->>>>>>> origin/test
 
 import argparse
 import os
@@ -15,12 +12,6 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import ipaddress
 
-<<<<<<< HEAD
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from utils.logger import log
-from data import collected_info
-
-=======
 # Добавление корня проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -28,26 +19,20 @@ from utils.logger import log
 from data import collected_info
 
 # Пути к шаблонам и выходному конфигу
->>>>>>> origin/test
 TEMPLATE_DIR = Path("data/10-kubelet.conf")
 OUTPUT_PATH = Path("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf")
 
 
 def calculate_pod_cidr(cluster_cidr: str, new_prefix: int, index: int = 0) -> str:
-<<<<<<< HEAD
-=======
     """
     Calculate a sub-CIDR block from the given cluster network.
     Вычисляет подсеть из основной сети подов для конкретного узла.
     """
->>>>>>> origin/test
     subnets = list(ipaddress.IPv4Network(cluster_cidr).subnets(new_prefix=new_prefix))
     return str(subnets[index])
 
 
 def render_template(mode: str):
-<<<<<<< HEAD
-=======
     """
     Render kubelet systemd override template based on selected mode.
     Генерирует шаблонный systemd-конфиг kubelet в заданном режиме.
@@ -57,7 +42,6 @@ def render_template(mode: str):
       - bootstrap:  урезанный конфиг для начального запуска kubelet
       - flags:      финальный полноценный конфиг с флагами --pod-cidr и --node-ip
     """
->>>>>>> origin/test
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     template_name = {
         "memory": "memory-step.conf.j2",
@@ -86,13 +70,10 @@ def render_template(mode: str):
 
 
 def reload_systemd(restart: bool = False):
-<<<<<<< HEAD
-=======
     """
     Reload systemd and optionally restart kubelet.
     Перезапускает systemd и (по необходимости) перезапускает kubelet.
     """
->>>>>>> origin/test
     subprocess.run(["systemctl", "daemon-reexec"], check=True)
     subprocess.run(["systemctl", "daemon-reload"], check=True)
     if restart:
@@ -108,13 +89,10 @@ def reload_systemd(restart: bool = False):
 
 
 def main():
-<<<<<<< HEAD
-=======
     """
     Entry point: parses args, renders template, and reloads kubelet.
     Точка входа: парсит аргументы, применяет шаблон и перезапускает kubelet при необходимости.
     """
->>>>>>> origin/test
     parser = argparse.ArgumentParser(description="Генерация 10-kubelet.conf через шаблон")
     parser.add_argument(
         "--mode",

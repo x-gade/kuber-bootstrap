@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 """
-<<<<<<< HEAD
-Установка бинарника cilium-agent и генерация systemd unit-файла
-для запуска его как systemd-сервиса с шаблонизацией через Jinja2.
-=======
 Install and configure cilium-agent as a systemd service with template rendering.
 Автоматическая установка бинарника cilium-agent и генерация systemd unit-файла
 с шаблонизацией через Jinja2. Скрипт также проверяет и создаёт необходимые
 директории для корректной работы сервиса.
->>>>>>> origin/test
 """
 
 import os
@@ -41,13 +36,10 @@ SERVICE_UPDATED = False
 BINARY_UPDATED = False
 
 def file_sha256(path: Path) -> str:
-<<<<<<< HEAD
-=======
     """
     Calculate SHA256 checksum of a file.
     Рассчитывает SHA256-хеш файла для проверки изменений.
     """
->>>>>>> origin/test
     h = hashlib.sha256()
     with open(path, 'rb') as f:
         for chunk in iter(lambda: f.read(8192), b""):
@@ -55,18 +47,6 @@ def file_sha256(path: Path) -> str:
     return h.hexdigest()
 
 def ensure_directories():
-<<<<<<< HEAD
-    for path in [TARGET_BIN.parent, CONFIG_DIR]:
-        if not path.exists():
-            path.mkdir(parents=True, exist_ok=True)
-            log(f"Создана директория: {path}", "ok")
-        else:
-            log(f"Директория уже существует: {path}", "info")
-
-def extract_and_install():
-    global BINARY_UPDATED
-
-=======
     """
     Ensure required directories for Cilium exist with correct permissions.
     Проверяет обязательные директории, создаёт их при отсутствии и выставляет права.
@@ -101,7 +81,6 @@ def extract_and_install():
     global BINARY_UPDATED
 
     # --- Cilium Agent ---
->>>>>>> origin/test
     if not ARCHIVE_PATH.exists():
         log(f"Архив не найден: {ARCHIVE_PATH}", "error")
         sys.exit(1)
@@ -134,11 +113,6 @@ def extract_and_install():
     shutil.rmtree(EXTRACT_DIR, ignore_errors=True)
     log("Временные файлы удалены", "info")
 
-<<<<<<< HEAD
-def render_config_file():
-    """
-    Генерирует YAML-конфиг для cilium-agent из Jinja2 шаблона
-=======
     # --- Cilium Health Responder ---
     health_bin = Path("/usr/local/bin/cilium-health-responder")
     health_archive = Path("/opt/kuber-bootstrap/binares/cilium-health-responder.tar.gz")
@@ -166,7 +140,6 @@ def render_config_file():
     """
     Generate YAML config for cilium-agent from Jinja2 template.
     Генерирует YAML-конфиг для cilium-agent из Jinja2 шаблона.
->>>>>>> origin/test
     """
     if not CONFIG_TEMPLATE_PATH.exists():
         log(f"Шаблон конфига не найден: {CONFIG_TEMPLATE_PATH}", "error")
@@ -197,13 +170,10 @@ def render_config_file():
     log(f"Конфиг cilium.yaml обновлён: {CONFIG_OUTPUT_PATH}", "ok")
 
 def render_unit_file():
-<<<<<<< HEAD
-=======
     """
     Render and install systemd unit file for cilium-agent.
     Генерирует и устанавливает unit-файл systemd для cilium-agent.
     """
->>>>>>> origin/test
     global SERVICE_UPDATED
 
     with open(TEMPLATE_PATH, "r") as f:
@@ -231,13 +201,10 @@ def render_unit_file():
     log(f"Unit-файл обновлён: {SERVICE_PATH}", "ok")
 
 def reload_and_start():
-<<<<<<< HEAD
-=======
     """
     Reload systemd and restart cilium service if needed.
     Перезапускает systemd и запускает сервис cilium при изменениях.
     """
->>>>>>> origin/test
     if not (SERVICE_UPDATED or BINARY_UPDATED):
         log("Нет изменений — пропускаем перезапуск systemd", "info")
         return
@@ -250,10 +217,6 @@ def reload_and_start():
         os.chmod("/opt/kuber-bootstrap/post/verify_bpf_mount.py", 0o755)
         log("[AUTO] Установлен +x на verify_bpf_mount.py", "warn")
 
-<<<<<<< HEAD
-    # Отображаем статус и последние логи, если рестарт неудачен
-=======
->>>>>>> origin/test
     try:
         subprocess.run(["systemctl", "restart", "cilium"], check=True)
     except subprocess.CalledProcessError:
@@ -266,13 +229,10 @@ def reload_and_start():
     log("Сервис cilium запущен и добавлен в автозагрузку", "ok")
 
 def main():
-<<<<<<< HEAD
-=======
     """
     Main function to install and configure cilium-agent.
     Основная функция установки и конфигурирования cilium-agent.
     """
->>>>>>> origin/test
     log("=== Установка cilium-agent и генерация systemd ===", "info")
     ensure_directories()
     extract_and_install()

@@ -1,33 +1,19 @@
 #!/usr/bin/env python3
 """
-<<<<<<< HEAD
-Apply all RBAC-related YAML manifests using kubectl.
-Применяет все YAML-манифесты из data/yaml/rbac через kubectl apply -f
-=======
 Render and apply all RBAC-related YAML manifests using kubectl.
 Генерирует шаблоны и применяет все YAML-манифесты из data/yaml/rbac через kubectl apply -f
->>>>>>> origin/test
 """
 
 import subprocess
 from pathlib import Path
 import sys
 import os
-<<<<<<< HEAD
-=======
 from jinja2 import Template
->>>>>>> origin/test
 
 # Добавляем корень проекта в PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.logger import log
-<<<<<<< HEAD
-
-RBAC_PATH = Path("data/yaml/rbac")
-
-def apply_rbac_manifests():
-=======
 from data import collected_info
 
 RBAC_PATH = Path("data/yaml/rbac")
@@ -76,7 +62,6 @@ def apply_rbac_manifests():
     Apply all YAML files from RBAC_PATH using kubectl.
     Применяет все YAML-файлы в каталоге RBAC через kubectl.
     """
->>>>>>> origin/test
     if not RBAC_PATH.exists():
         log(f"Директория {RBAC_PATH} не существует", "error")
         return
@@ -97,14 +82,8 @@ def apply_rbac_manifests():
             log(result.stdout.strip(), "ok")
         else:
             log(f"[Ошибка] {file}:\n{result.stderr.strip()}", "error")
-<<<<<<< HEAD
-            exit(result.returncode)
-
-if __name__ == "__main__":
-=======
             sys.exit(result.returncode)
 
 if __name__ == "__main__":
     render_templates()
->>>>>>> origin/test
     apply_rbac_manifests()

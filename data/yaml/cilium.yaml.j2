@@ -12,14 +12,8 @@ ipam: cluster-pool
 cluster-pool-ipv4-cidr: {{ CLUSTER_POD_CIDR }}
 cluster-pool-ipv4-mask-size: {{ CIDR }}
 
-<<<<<<< HEAD
-enable-bpf-masquerade: true
-enable-l7-proxy: false
-disable-envoy-version-check: true
-=======
 trace_payload_len: 64
 enable-bpf-masquerade: true
->>>>>>> origin/test
 enable-ipv4: true
 enable-ipv6: false
 ipv4-node: {{ IP }}
@@ -31,11 +25,6 @@ devices:
 bpf-root: /sys/fs/bpf
 k8s-require-ipv4-pod-cidr: false
 
-<<<<<<< HEAD
-agent-health-port: 9879
-cluster-name: default
-debug: false
-=======
 cniSocketPath: /var/run/cilium/cilium.sock
 
 agent-health-port: 9879
@@ -50,4 +39,3 @@ envoy:
   socket-path: /var/run/cilium/envoy.sock
   xds-server-port: 18000
   access-log-path: /var/run/cilium/envoy.log
->>>>>>> origin/test

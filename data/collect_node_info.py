@@ -1,14 +1,5 @@
 # collect_node_info.py
 
-<<<<<<< HEAD
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-import socket
-import platform
-from utils.logger import log
-=======
 """
 Collects node information and optionally appends control-plane bootstrap parameters.
 Настраивает пользователя ipam-client и доступ только на node_intake_client.py.
@@ -28,15 +19,10 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.logger import log
 from jinja2 import Environment, FileSystemLoader
->>>>>>> origin/test
 
 OUTPUT_FILE = "data/collected_info.py"
 CLUSTER_POD_CIDR = "10.244.0.0/16"
 
-<<<<<<< HEAD
-def get_ip():
-    """Получает внешний IP-адрес через сокет без внешних запросов"""
-=======
 WRAPPER_PATH = "/opt/kuber-bootstrap/cluster/intake_services/ssh_wrapper.sh"
 RESTRICTED_CMD = f"/usr/bin/bash {WRAPPER_PATH}"
 NODE_CLIENT_PATH = "/opt/kuber-bootstrap/cluster/intake_services/node_intake_client.py"
@@ -78,7 +64,6 @@ def get_ip():
     Get the external IP address using a dummy UDP connection.
     Получает внешний IP-адрес через фиктивное UDP-соединение.
     """
->>>>>>> origin/test
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -86,48 +71,6 @@ def get_ip():
         s.close()
         return ip
     except Exception as e:
-<<<<<<< HEAD
-        log(f"Не удалось определить IP-адрес: {e}", "error")
-        return "127.0.0.1"
-
-def collect_info(role="control-plane"):
-    log("Сбор данных о машине...", "info")
-
-    if role not in ["control-plane", "worker"]:
-        log("Недопустимая роль. Используйте: control-plane или worker", "error")
-        sys.exit(1)
-
-    role_description = "Управляющий (control-plane)" if role == "control-plane" else "Рабочий (worker)"
-    log(f"Узел будет настроен как: {role_description}", "info")
-
-    cidr = "24" if role == "control-plane" else "24"
-
-    info = {
-        "IP": get_ip(),
-        "HOSTNAME": socket.gethostname(),
-        "ARCH": platform.machine(),
-        "DISTRO": platform.linux_distribution()[0] if hasattr(platform, 'linux_distribution') else platform.system(),
-        "KERNEL": platform.release(),
-        "ROLE": role,
-        "CIDR": cidr,
-        "CLUSTER_POD_CIDR": CLUSTER_POD_CIDR
-    }
-
-    with open(OUTPUT_FILE, "w") as f:
-        for key, value in info.items():
-            f.write(f'{key} = "{value}"\n')
-
-    log(f"Данные сохранены в {OUTPUT_FILE}", "ok")
-
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        role_arg = sys.argv[1].strip().lower()
-    else:
-        role_arg = "control-plane"
-        log("Аргумент роли не указан, использую по умолчанию: control-plane", "warn")
-
-    collect_info(role=role_arg)
-=======
         log(f"Не удалось определить IP: {e}", "error")
         return "127.0.0.1"
 
@@ -394,4 +337,3 @@ if __name__ == "__main__":
         if not args.role:
             log("Роль не указана, по умолчанию control-plane", "warn")
         collect_info(role=role_arg)
->>>>>>> origin/test

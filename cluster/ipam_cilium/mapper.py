@@ -1,31 +1,19 @@
 #!/usr/bin/env python3
 """
-<<<<<<< HEAD
-    Mapper module for assigning static CIDR blocks to Kubernetes nodes.
-    Supports both manual input and bootstrap mode (cpb).
-
-    Модуль Mapper для назначения CIDR блоков узлам Kubernetes.
-    Поддерживает ручной режим и bootstrap-режим (cpb).
-=======
 Mapper module for assigning and removing static CIDR blocks for Kubernetes nodes.
 
 Модуль Mapper для назначения и удаления CIDR блоков узлам Kubernetes.
 Поддерживает два режима:
   - register (назначить CIDR)
   - delete (удалить ноду из карты)
->>>>>>> origin/test
 """
 
 import argparse
 import json
 import sys
 import os
-<<<<<<< HEAD
-from ipaddress import IPv4Network, IPv4Address
-=======
 import ipaddress
 from ipaddress import IPv4Network
->>>>>>> origin/test
 from pathlib import Path
 
 # Добавляем корень проекта
@@ -42,31 +30,6 @@ CONTROL_MAP = MAPS_DIR / "control_plane_map.json"
 WORKER_MAP = MAPS_DIR / "worker_map.json"
 COLLECTED_INFO = Path("data/collected_info.py")
 
-<<<<<<< HEAD
-def load_map(path: Path) -> dict:
-    """
-        Load JSON map from file
-
-        Загружает JSON-карту из файла
-    """
-    if not path.exists():
-        path.write_text("{}")
-    return json.loads(path.read_text())
-
-def save_map(path: Path, data: dict) -> None:
-    """
-        Save JSON map to file
-
-        Сохраняет JSON-карту в файл
-    """
-    path.write_text(json.dumps(data, indent=4))
-
-def extract_info_from_py() -> tuple[str, str, str]:
-    """
-        Extract node information from collected_info.py
-
-        Извлекает параметры ноды из collected_info.py
-=======
 
 def ensure_map_file(path: Path):
     """
@@ -115,27 +78,12 @@ def extract_info_from_py() -> tuple[str, str, str, str]:
     Extract node information from collected_info.py
 
     Извлекает параметры ноды из collected_info.py
->>>>>>> origin/test
     """
     namespace = {}
     exec(COLLECTED_INFO.read_text(), namespace)
     return (
         namespace["HOSTNAME"],
         namespace["IP"],
-<<<<<<< HEAD
-        namespace["ROLE"]
-    )
-
-def find_next_subnet(base: IPv4Network, used: set[str], mask: int, role: str) -> tuple[str, str]:
-    """
-        Find next unused subnet in base network and return its CIDR and clasterip
-
-        Находит следующую неиспользуемую подсеть в базовой сети
-        и возвращает её CIDR и clasterip
-    """
-    available = list(base.subnets(new_prefix=mask))
-
-=======
         namespace["ROLE"],
         namespace["CLUSTER_POD_CIDR"]
     )
@@ -168,54 +116,16 @@ def find_next_subnet(base: IPv4Network, used: set[str], mask: int, role: str) ->
     if role == "worker" and available:
         available = available[1:]
 
->>>>>>> origin/test
     for subnet in available:
         cidr = str(subnet)
         if cidr in used:
             continue
 
-<<<<<<< HEAD
-        if role == "control-plane":
-            # clasterip: фиксированная сеть 10.244.0.X
-            offset = int(subnet.network_address.exploded.split(".")[-1])
-            clasterip = f"10.244.0.{offset}"
-        else:
-            clasterip = str(subnet.network_address)
-
-=======
         clasterip = str(subnet.network_address)
->>>>>>> origin/test
         return cidr, clasterip
 
     raise RuntimeError("CIDR pool exhausted")
 
-<<<<<<< HEAD
-def assign_cidr(role: str, nodename: str, globalip: str) -> dict:
-    """
-        Assign next free CIDR block to a node and update map
-
-        Назначает следующий CIDR блок ноде и обновляет карту
-    """
-    if role == "control-plane":
-        path = CONTROL_MAP
-        base = IPv4Network("10.244.0.0/26")
-        mask = 26
-    elif role == "worker":
-        path = WORKER_MAP
-        base = IPv4Network("10.244.1.0/24")
-        mask = 24
-    else:
-        raise ValueError(f"Unknown role: {role}")
-
-    data = load_map(path)
-
-    if nodename in data:
-        log(f"Нода {nodename} уже присутствует в карте", "warn")
-        print(json.dumps(data[nodename], indent=4))
-        return data[nodename]
-
-    used_cidrs = {entry["cidr"] for entry in data.values()}
-=======
 
 def assign_cidr(role: str, nodename: str, globalip: str) -> dict:
     """
@@ -247,7 +157,6 @@ def assign_cidr(role: str, nodename: str, globalip: str) -> dict:
     used_cidrs = {entry["cidr"] for entry in data.values()}
 
     # ищем следующую свободную
->>>>>>> origin/test
     cidr, clasterip = find_next_subnet(base, used_cidrs, mask, role)
 
     entry = {
@@ -258,17 +167,6 @@ def assign_cidr(role: str, nodename: str, globalip: str) -> dict:
         "clasterip": clasterip
     }
 
-<<<<<<< HEAD
-    data[nodename] = entry
-    save_map(path, data)
-
-    log(f"Добавлен узел {nodename} в карту {path.name}", "ok")
-    print(json.dumps(entry, indent=4))
-    return entry
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Assign CIDR to a Kubernetes node")
-=======
     # добавляем и сохраняем
     data[nodename] = entry
     save_map(path, data)
@@ -312,7 +210,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--action", choices=["register", "delete"], required=True,
                         help="Action to perform: register or delete")
->>>>>>> origin/test
 
     parser.add_argument("--cpb", action="store_true",
                         help="Use collected_info.py to get node parameters")
@@ -322,16 +219,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-<<<<<<< HEAD
-    if args.cpb:
-        name, ip, role = extract_info_from_py()
-    else:
-        if not (args.name and args.ip and args.role):
-            parser.error("Must provide --name, --ip and --role unless using --cpb")
-        name, ip, role = args.name, args.ip, args.role
-
-    assign_cidr(role, name, ip)
-=======
     if args.action == "register":
         if args.cpb:
             name, ip, role, cluster_cidr = extract_info_from_py()
@@ -347,4 +234,3 @@ if __name__ == "__main__":
         if not args.name:
             parser.error("Must provide --name for delete")
         delete_node_entry(args.name)
->>>>>>> origin/test

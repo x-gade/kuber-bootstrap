@@ -15,17 +15,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from utils.logger import log
 from data.collected_info import ROLE, HOSTNAME
 
-<<<<<<< HEAD
-KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
-KUBELET_FLAGS_ENV = "/var/lib/kubelet/kubeadm-flags.env"
-
-
-=======
 # Пути к kubeconfig и флагам kubelet
 KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 KUBELET_FLAGS_ENV = "/var/lib/kubelet/kubeadm-flags.env"
 
->>>>>>> origin/test
 def run(cmd, error_msg="Ошибка выполнения команды"):
     """
     Run a shell command and handle error logging.
@@ -38,31 +31,16 @@ def run(cmd, error_msg="Ошибка выполнения команды"):
         log(f"{error_msg}: {e}", "error")
         return False
 
-
 def start_kubelet():
-<<<<<<< HEAD
-=======
     """
     Remove default kubeadm flags and start kubelet using systemd configuration.
     Удаляет старые флаги kubeadm и запускает kubelet через systemd-настройки.
     """
->>>>>>> origin/test
     log("[PHASE] Конфигурация и запуск kubelet", "step")
     if os.path.exists(KUBELET_FLAGS_ENV):
         os.remove(KUBELET_FLAGS_ENV)
         log("Удалён kubeadm-flags.env — теперь только systemd управляет параметрами kubelet", "warn")
 
-<<<<<<< HEAD
-    # Применяем шаблонную конфигурацию и перезапускаем
-    subprocess.run(["python3", "kubelet/manage_kubelet_config.py", "--mode", "flags"], check=True)
-
-
-def wait_for_apiserver():
-    log("Ожидание ответа от kube-apiserver (/healthz)...", "info")
-    for _ in range(30):
-        try:
-            out = subprocess.check_output(["curl", "-sf", "--max-time", "2", "https://127.0.0.1:6443/healthz", "--insecure"])
-=======
     # Генерация конфигурации флагов для systemd и запуск
     subprocess.run(["python3", "kubelet/manage_kubelet_config.py", "--mode", "flags"], check=True)
 
@@ -78,7 +56,6 @@ def wait_for_apiserver():
                 "curl", "-sf", "--max-time", "2",
                 "https://127.0.0.1:6443/healthz", "--insecure"
             ])
->>>>>>> origin/test
             if b"ok" in out:
                 log("kube-apiserver доступен", "ok")
                 return True
@@ -88,10 +65,6 @@ def wait_for_apiserver():
     log("kube-apiserver не ответил за 90 секунд", "error")
     return False
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/test
 def main():
     """
     Entry point: prepare control-plane for further kubeadm phases.
@@ -109,10 +82,6 @@ def main():
         sys.exit(1)
 
     log("kubelet и apiserver запущены. Инициализация продолжится после установки CNI", "ok")
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/test
 
 if __name__ == "__main__":
     main()

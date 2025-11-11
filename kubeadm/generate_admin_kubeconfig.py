@@ -6,18 +6,10 @@ Generate and apply kubeconfig for admin user in different modes.
 
 import os
 import sys
-<<<<<<< HEAD
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-import yaml
-from pathlib import Path
-from utils.logger import log
-=======
 import json
 import hashlib
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, meta
->>>>>>> origin/test
 
 # Подключаем логгер
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -31,11 +23,8 @@ WORKER_TEMPLATE_PATH = Path("data/conf/admin_worker.conf.j2")  # шаблон д
 KUBECONFIG_PATH = Path("/etc/kubernetes/admin.conf")
 PROFILE_EXPORT_PATH = Path("/etc/profile.d/set-kubeconfig.sh")
 
-<<<<<<< HEAD
-=======
 # Данные для control-plane
 from data import collected_info
->>>>>>> origin/test
 
 # Данные для worker
 JOIN_INFO_PATH = Path("data/join_info.json")

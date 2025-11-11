@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-<<<<<<< HEAD
-import subprocess
-import os
-import sys
-=======
 """
 Initialize and configure CoreDNS using predefined YAML or Jinja2 templates.
 Инициализация и настройка CoreDNS на основе YAML или Jinja2 шаблонов.
@@ -16,16 +11,12 @@ import sys
 import tempfile
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
->>>>>>> origin/test
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.logger import log
 
 KUBECONFIG_PATH = "/etc/kubernetes/admin.conf"
 
-<<<<<<< HEAD
-def run(cmd: list, error_msg: str, exit_on_fail=True):
-=======
 FILES = [
     ("coredns_configmap.yaml", "ConfigMap CoreDNS"),
     ("coredns_deployment.yaml", "Deployment CoreDNS"),
@@ -41,7 +32,6 @@ def run(cmd: list, error_msg: str, exit_on_fail=True):
     :param error_msg: Сообщение об ошибке для логирования.
     :param exit_on_fail: Завершать ли выполнение при ошибке (по умолчанию True).
     """
->>>>>>> origin/test
     try:
         subprocess.run(cmd, check=True)
         log("Успешно: " + " ".join(cmd), "ok")
@@ -50,23 +40,6 @@ def run(cmd: list, error_msg: str, exit_on_fail=True):
         if exit_on_fail:
             sys.exit(1)
 
-<<<<<<< HEAD
-def main():
-    log("Экспорт переменной KUBECONFIG", "step")
-    os.environ["KUBECONFIG"] = KUBECONFIG_PATH
-
-    log("Установка CoreDNS", "step")
-    run(
-        ["kubeadm", "init", "phase", "addon", "coredns"],
-        "Ошибка при установке CoreDNS"
-    )
-
-    log("Готово! Проверка pod'ов через kubectl get pods -n kube-system", "step")
-    try:
-        subprocess.run(["kubectl", "get", "pods", "-n", "kube-system"])
-    except Exception:
-        log("Не удалось получить список pod'ов. Проверьте статус kubelet и CNI.", "warn")
-=======
 def render_template(template_path: Path) -> str:
     """
     Render a Jinja2 template to a temporary file and return its path.
@@ -130,7 +103,6 @@ def main():
 
     log("Вывод текущих pod'ов", "step")
     subprocess.run(["kubectl", "get", "pods", "-n", "kube-system"], check=False)
->>>>>>> origin/test
 
 if __name__ == "__main__":
     main()

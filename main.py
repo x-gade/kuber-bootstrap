@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-#!/usr/bin/env python3
-=======
 1#!/usr/bin/env python3
->>>>>>> origin/test
 import os
 import subprocess
 import sys
@@ -19,48 +15,19 @@ CONTROL_PLANE_STEPS = [
     ("Проверка бинарников", "setup/check_binaries.py control-plane"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
     ("Установка конифгурационного файла containered", "setup/install_containerd.py"),
-<<<<<<< HEAD
-    ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py"),
-    ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
-    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
-#    ("Включение временной сети bridge", "post/enable_temp_network.py"),
-=======
     ("Генерация kubelet конфигурации", "kubelet/generate_kubelet_conf.py -cp"),
     ("Применение ограничений памяти для kubelet", "kubelet/manage_kubelet_config.py --mode memory"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
->>>>>>> origin/test
     ("Установка Helm", "setup/install_helm.py"),
     ("Генерация сертификатов", "certs/generate_all.py"),
     ("Генерация kubelet kubeconfig", "kubelet/generate_kubelet_kubeconfig.py"),
     ("Генерация и запуск etcd как systemd unit", "systemd/generate_etcd_service.py"),
     ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
-<<<<<<< HEAD
-
-    ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py"),
-=======
     ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
->>>>>>> origin/test
     ("Генерация admin.kubeconfig", "kubeadm/generate_admin_kubeconfig.py"),
     ("Фазовая инициализация кластера через kubeadm", "kubeadm/run_kubeadm_phases.py"),
     ("Генерация и запуск controller-manager как systemd unit", "systemd/generate_controller_manager_service.py"),
     ("Генерация и запуск scheduler как systemd unit", "systemd/generate_scheduler_service.py"),
-<<<<<<< HEAD
-
-    ("Назначение роли control-plane ноде", "post/label_node.py"),
-
-    ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
-    ("Применение RBAC для корректной связи с kubelet", " kubelet/apply_rbacs.py"),
-    ("Применение CRD для cilium-agent", "post/apply_crds_cilium.py"),
-    ("Создание cilium-agent systemd сервиса", "systemd/generate_cilium_service.py"),
-#    ("Проверка и подготовка маунтов BPF и cgroup2 для работы Cilium", "post/verify_bpf_mount.py"),
-#    ("Установка Cilium","post/generate_cilium_values.py"),
-    ("Запуск kube-apiserver в режиме DEV", "systemd/generate_apiserver_service.py --mode=dev"),
-    ("Патч kubelet для продовой среды", "kubelet/manage_kubelet_config.py --mode flags"),
-#    ("Установка CoreDNS и проверка компонентов", "post/initialize_coredns.py"),
-#    ("Переключение kube-apiserver в режим PROD", "systemd/generate_apiserver_service.py --mode=prod"),
-
-#    ("Назначение роли control-plane ноде", "post/label_node.py"),
-=======
     ("Назначение роли control-plane ноде", "post/label_node.py"),
     ("Добавление бинарника и конфига cilium-cni для kubelet", "post/install_cilium_cni.py"),
     ("Применение RBAC для корректной связи с kubelet", " kubelet/apply_rbacs.py"),
@@ -73,30 +40,21 @@ CONTROL_PLANE_STEPS = [
     ("Назначение роли control-plane ноде", "post/label_node.py"),
     ("Сбор информации о ноде", "data/collect_node_info.py -cpb"),
     ("Создание пользовтаеля cilium для воркер нод", "post/generate_cilium_sa.py")
->>>>>>> origin/test
 ]
 
 # Очерёдность шагов установки для worker-ноды
 WORKER_STEPS = [
-<<<<<<< HEAD
-=======
     ("Сбор данных о контрол-плейн узле", "cluster/collecter_join_info.py"),
->>>>>>> origin/test
     ("Сбор информации о ноде", "data/collect_node_info.py worker"),
     ("Установка зависимостей", "setup/install_dependencies.py"),
     ("Проверка бинарников", "setup/check_binaries.py worker"),
     ("Установка недостающих бинарников", "setup/install_binaries.py"),
-<<<<<<< HEAD
-    ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode flags"),
-    ("Установка Helm", "setup/install_helm.py"),
-=======
     ("Установка корректного конфига для containerd", "setup/install_containerd.py"),
     ("Патч сети для возможности подключить ноду", "post/network_patch.py"),
     ("Генерация kubelet config", "kubelet/generate_kubelet_conf.py -w"),
     ("Установка systemd сервиса Kubelet.services из бинарника", "systemd/generate_kubelet_service.py"),
     ("Установка systemd сервиса kubelet.slise", "systemd/generate_kubelet_slice.py"),
     ("Патч kubelet аргументов", "kubelet/manage_kubelet_config.py --mode bootstrap"),
->>>>>>> origin/test
     ("Получение и выполнение команды join", "post/join_nodes.py"),
     ("Генерация kubeadm-конфига", "kubeadm/generate_kubeadm_config.py -cpb"),
     ("Настройка ноды, выдача адреса в cilium сети", "cluster/intake_services/init_services.py -wb"),

@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 """
     Patcher module for updating CiliumNode with assigned CIDR info.
-<<<<<<< HEAD
-    Supports --cpb mode or external JSON input.
-
-    Модуль Patcher для обновления объекта CiliumNode.
-    Поддерживает режим bootstrap (--cpb) или внешний JSON-файл.
-=======
     Supports --cpb mode, --w (worker mode), or external JSON input.
 
     Модуль Patcher для обновления объекта CiliumNode.
     Поддерживает режимы --cpb (control-plane bootstrap), --w (worker mode) и внешний JSON-файл.
->>>>>>> origin/test
 """
 
 import argparse
@@ -19,26 +12,11 @@ import json
 import os
 import subprocess
 import sys
-<<<<<<< HEAD
-=======
 import time
->>>>>>> origin/test
 from pathlib import Path
 
 # Добавляем корень проекта
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-<<<<<<< HEAD
-
-from utils.logger import log
-
-CONTROL_MAP = Path("cluster/ipam_cilium/maps/control_plane_map.json")
-
-def load_entry_from_cpb() -> dict:
-    """
-        Load node info from control_plane_map.json using current hostname
-
-        Загружает данные узла из карты control_plane по текущему hostname
-=======
 from utils.logger import log
 
 CONTROL_MAP = Path("cluster/ipam_cilium/maps/control_plane_map.json")
@@ -56,7 +34,6 @@ def load_entry_from_cpb() -> dict:
     """
     Load node info from control_plane_map.json using current hostname.
     Загружает данные узла из карты control_plane по текущему hostname.
->>>>>>> origin/test
     """
     hostname = os.uname().nodename
     if not CONTROL_MAP.exists():
@@ -66,13 +43,6 @@ def load_entry_from_cpb() -> dict:
         raise KeyError(f"Нода {hostname} не найдена в карте {CONTROL_MAP}")
     return data[hostname]
 
-<<<<<<< HEAD
-def load_entry_from_file(path: str) -> dict:
-    """
-        Load node info from external JSON file
-
-        Загружает данные узла из внешнего JSON-файла
-=======
 
 def load_entry_from_worker() -> dict:
     """
@@ -88,27 +58,12 @@ def load_entry_from_file(path: str) -> dict:
     """
     Load node info from external JSON file.
     Загружает данные узла из внешнего JSON-файла.
->>>>>>> origin/test
     """
     f = Path(path)
     if not f.exists():
         raise FileNotFoundError(f"Файл не найден: {f}")
     return json.loads(f.read_text())
 
-<<<<<<< HEAD
-def patch_node(name: str, cidr: str):
-    """
-        Patch Kubernetes node with given CIDR
-
-        Пропатчить Kubernetes-ноду с указанным CIDR
-    """
-    patch_cmd = [
-        "kubectl", "patch", "node", name,
-        "--type=merge",
-        f"-p={{\"spec\":{{\"podCIDR\":\"{cidr}\"}}}}"
-    ]
-    result = subprocess.run(patch_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-=======
 
 def run_kubectl(cmd: list, use_worker_config=False):
     """
@@ -136,7 +91,6 @@ def patch_node(name: str, cidr: str, worker_mode=False):
         f"-p={patch_payload}"
     ]
     result = run_kubectl(cmd, use_worker_config=worker_mode)
->>>>>>> origin/test
 
     if result.returncode == 0:
         log(f"Нода {name} успешно пропатчена CIDR {cidr}", "ok")
@@ -144,12 +98,6 @@ def patch_node(name: str, cidr: str, worker_mode=False):
         log(f"Ошибка при патче ноды {name}: {result.stderr.decode()}", "error")
         sys.exit(1)
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Patch CiliumNode with CIDR info")
-    parser.add_argument("--cpb", action="store_true", help="Режим control-plane bootstrap")
-    parser.add_argument("--json", help="Путь до JSON-файла с описанием ноды")
-=======
 
 def is_crd_ciliumnode_present(worker_mode=False) -> bool:
     """
@@ -274,21 +222,10 @@ if __name__ == "__main__":
     parser.add_argument("--w", action="store_true", help="Режим worker (читает worker_map.json и использует свой kubeconfig)")
     parser.add_argument("--json", help="Путь до JSON-файла с описанием ноды")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SEC, help="Таймаут ожиданий (сек), по умолчанию 300")
->>>>>>> origin/test
 
     args = parser.parse_args()
 
     try:
-<<<<<<< HEAD
-        if args.cpb:
-            node_info = load_entry_from_cpb()
-        elif args.json:
-            node_info = load_entry_from_file(args.json)
-        else:
-            parser.error("Укажите --cpb или --json <path>")
-
-        patch_node(node_info["name"], node_info["cidr"])
-=======
         worker_mode = False
 
         if args.cpb:
@@ -306,7 +243,6 @@ if __name__ == "__main__":
 
         # Затем — CiliumNode с «умным» ожиданием CRD и ресурса
         patch_cilium_node(node_info["name"], node_info["cidr"], worker_mode=worker_mode, timeout_sec=args.timeout)
->>>>>>> origin/test
 
     except Exception as e:
         log(f"[PATCHER] Ошибка: {str(e)}", "error")

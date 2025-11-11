@@ -1,17 +1,9 @@
-<<<<<<< HEAD
-# ClusterRole с нужными разрешениями
-=======
 # ClusterRole для systemd-агента cilium с расширенными правами
->>>>>>> origin/test
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cilium
 rules:
-<<<<<<< HEAD
-  - apiGroups: ["cilium.io"]
-    resources: ["ciliumnodes"]
-=======
   - apiGroups: [""]
     resources: ["nodes", "pods", "services", "endpoints"]
     verbs: ["get", "list", "watch"]
@@ -20,28 +12,11 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["cilium.io"]
     resources: ["ciliumnodes", "ciliumendpoints", "ciliumnetworkpolicies"]
->>>>>>> origin/test
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
 ---
 
-<<<<<<< HEAD
-# ClusterRoleBinding уже у тебя есть, оставляем без изменений
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: cilium-agent-from-systemd
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cilium
-subjects:
-  - kind: User
-    name: system:node:cilium
-    apiGroup: rbac.authorization.k8s.io
-=======
 # Привязка прав к User = system:node:cilium
->>>>>>> origin/test
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 
 """
-<<<<<<< HEAD
-Генерация systemd unit-файла и запуск kube-scheduler.
-Generates a systemd unit file and launches kube-scheduler.
-=======
 Generates a systemd unit file and starts the kube-scheduler component.
 Генерирует systemd unit-файл и запускает компонент kube-scheduler.
->>>>>>> origin/test
 """
 
 import os
@@ -33,13 +28,10 @@ REQUIRED_BINARIES_PATH = BASE_DIR / "data/required_binaries.yaml"
 
 
 def load_required_version():
-<<<<<<< HEAD
-=======
     """
     Load required kube-scheduler version and path from YAML config.
     Загружает требуемую версию и путь до kube-scheduler из YAML-файла.
     """
->>>>>>> origin/test
     if not REQUIRED_BINARIES_PATH.exists():
         log(f"Файл {REQUIRED_BINARIES_PATH} не найден", "error")
         sys.exit(1)
@@ -56,13 +48,10 @@ def load_required_version():
 
 
 def download_binary(version, path):
-<<<<<<< HEAD
-=======
     """
     Download the kube-scheduler binary from the official release.
     Загружает бинарник kube-scheduler с официального источника.
     """
->>>>>>> origin/test
     if os.path.exists(path):
         log(f"Бинарник уже установлен: {path}", "ok")
         return
@@ -80,13 +69,10 @@ def download_binary(version, path):
 
 
 def generate_unit_file(bin_path):
-<<<<<<< HEAD
-=======
     """
     Render and write the systemd unit file for kube-scheduler.
     Рендерит и записывает systemd unit-файл для kube-scheduler.
     """
->>>>>>> origin/test
     if not TEMPLATE_PATH.exists():
         log(f"Шаблон systemd unit не найден: {TEMPLATE_PATH}", "error")
         sys.exit(1)
@@ -116,13 +102,10 @@ def generate_unit_file(bin_path):
 
 
 def ensure_kubeconfig():
-<<<<<<< HEAD
-=======
     """
     Ensure scheduler.conf exists, generate with kubeadm if missing.
     Проверяет наличие scheduler.conf, создаёт через kubeadm при отсутствии.
     """
->>>>>>> origin/test
     if Path(KUBECONFIG_PATH).exists():
         log("Файл scheduler.conf уже существует", "ok")
         return
@@ -140,13 +123,10 @@ def ensure_kubeconfig():
 
 
 def reload_and_start():
-<<<<<<< HEAD
-=======
     """
     Reload systemd and start kube-scheduler service.
     Перезагружает systemd и запускает сервис kube-scheduler.
     """
->>>>>>> origin/test
     try:
         subprocess.run(["systemctl", "daemon-reexec"], check=True)
         subprocess.run(["systemctl", "daemon-reload"], check=True)
@@ -159,13 +139,10 @@ def reload_and_start():
 
 
 def main():
-<<<<<<< HEAD
-=======
     """
     Main entrypoint: generate kube-scheduler service and start it.
     Главная точка входа: генерирует сервис kube-scheduler и запускает его.
     """
->>>>>>> origin/test
     log("=== Генерация systemd для kube-scheduler ===", "info")
     ensure_kubeconfig()
     version, path = load_required_version()

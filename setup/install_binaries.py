@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# setup/install_binaries.py
-=======
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -19,29 +16,12 @@ Install missing CLI binaries from tar archives and (optionally) install CNI plug
 - Особый случай "cni-plugins": находим "binares/cni-plugins-linux-amd64-*.tgz" и
   устанавливаем все файлы внутрь /opt/cni/bin с правами на исполнение.
 """
->>>>>>> origin/test
 
 import os
 import sys
 import json
 import tarfile
 from pathlib import Path
-<<<<<<< HEAD
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from utils.logger import log
-
-MISSING_FILE = "data/missing_binaries.json"
-BINARIES_DIR = Path("binares")
-INSTALL_PATH = Path("/usr/local/bin")
-TMP_DIR = Path("/tmp")
-
-def install_binary_from_archive(binary: str):
-    """
-    Extract and install a binary from its archive.
-    Распаковывает и устанавливает бинарник из архива.
-=======
 from tempfile import NamedTemporaryFile
 from typing import Optional
 
@@ -134,7 +114,6 @@ def install_binary_from_archive(binary: str) -> None:
     Extract and install a single CLI binary from its "<name>.tar.gz" in 'binares/'.
 
     Распаковать и установить одиночный CLI-бинарник из "<name>.tar.gz" в 'binares/'.
->>>>>>> origin/test
     """
     archive_path = BINARIES_DIR / f"{binary}.tar.gz"
 
@@ -154,15 +133,9 @@ def install_binary_from_archive(binary: str) -> None:
                 if cli_binary.exists():
                     cli_binary.chmod(0o755)
                     cli_binary.replace(INSTALL_PATH / "cilium")
-<<<<<<< HEAD
-                    log(f"cilium CLI установлен в /usr/local/bin/cilium", "ok")
-                else:
-                    log(f"cilium CLI не найден после распаковки", "error")
-=======
                     log("cilium CLI установлен в /usr/local/bin/cilium", "ok")
                 else:
                     log("cilium CLI не найден после распаковки", "error")
->>>>>>> origin/test
                 return
 
             # Обычные бинарники — ищем одноимённый файл внутри архива
@@ -174,27 +147,16 @@ def install_binary_from_archive(binary: str) -> None:
             tar.extract(member, path=TMP_DIR)
             extracted = TMP_DIR / binary
             extracted.chmod(0o755)
-<<<<<<< HEAD
-            extracted.replace(INSTALL_PATH / binary)
-            log(f"{binary} установлен в {INSTALL_PATH}", "ok")
-=======
 
             # Для kubelet — используем /usr/bin
             target_path = Path("/usr/bin") / binary if binary == "kubelet" else INSTALL_PATH / binary
 
             extracted.replace(target_path)
             log(f"{binary} установлен в {target_path}", "ok")
->>>>>>> origin/test
 
     except Exception as e:
         log(f"Ошибка при установке {binary}: {e}", "error")
 
-<<<<<<< HEAD
-def main():
-    """
-    Install all missing binaries from tar.gz archives.
-    Устанавливает все отсутствующие бинарники из архивов.
-=======
 
 def main() -> None:
     """
@@ -203,7 +165,6 @@ def main() -> None:
 
     Установить все недостающие бинарники из 'data/missing_binaries.json'.
     Специальный элемент "cni-plugins" триггерит установку архива CNI-плагинов.
->>>>>>> origin/test
     """
     if not os.path.exists(MISSING_FILE):
         log(f"Файл {MISSING_FILE} не найден — установка не требуется", "ok")
@@ -218,9 +179,6 @@ def main() -> None:
         os.remove(MISSING_FILE)
         return
 
-<<<<<<< HEAD
-    for binary in missing:
-=======
     # CNI плагинов — отдельная ветка
     if "cni-plugins" in missing:
         archive = find_cni_archive()
@@ -233,15 +191,11 @@ def main() -> None:
     for binary in missing:
         if binary == "cni-plugins":
             continue
->>>>>>> origin/test
         install_binary_from_archive(binary)
 
     log("Все бинарники установлены.", "ok")
     os.remove(MISSING_FILE)
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/test
 if __name__ == "__main__":
     main()

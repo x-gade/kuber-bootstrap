@@ -73,30 +73,17 @@ def validate_key_pair(cert_path, key_path):
         return False
 
 def renew_certificate(name, path):
-<<<<<<< HEAD
-    log(f"Обновление сертификата: {name}", "warn")
-    try:
-        key_path = path.replace(".crt", ".key")
-        csr_path = f"/tmp/{name}.csr"
-        cnf_path = write_openssl_cnf(name)
-=======
     """
     Renew a certificate using corresponding generator.
     Обновляет сертификат через соответствующую функцию генерации.
     """
     log(f"Обновление сертификата: {name}", "warn")
->>>>>>> origin/test
 
     key_path = path.replace(".crt", ".key")
 
     if name == "cilium":
         generate_cilium_cert()
         return True
-<<<<<<< HEAD
-    except subprocess.CalledProcessError as e:
-        log(f"Ошибка обновления {name}: {e}", "error")
-        return False
-=======
     elif name == "sa":
         generate_sa_keys(force=True)
         return True
@@ -126,7 +113,6 @@ def renew_certificate(name, path):
             path=path,
             key_path=key_path
         )
->>>>>>> origin/test
 
 def restart_service_if_needed(name):
     """
@@ -223,10 +209,6 @@ def check_and_renew():
         log("cert_info.json обновлён", "ok")
     else:
         log("Все сертификаты в порядке, обновление не требуется", "ok")
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/test
 
 if __name__ == "__main__":
     """
